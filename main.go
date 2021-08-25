@@ -72,6 +72,7 @@ func main() {
 		}
 	}
 
+	var total int
 	for i := 0; i < len(workingDays); i++ {
 		start := workingDays[i][0]
 		end := workingDays[i][len(workingDays[i])-1]
@@ -82,6 +83,11 @@ func main() {
 			unit = "day"
 		}
 
-		fmt.Printf("%d %s of work done in between %s and %s %d @ US263 per day - %d\n", days, unit, start.String(), end.String(), start.Year(), 263*days)
+		value := 263*days
+		total += value
+
+		fmt.Printf("%d %s of work done in between %s and %s %d @ US263 per day - %d\n", days, unit, start.String(), end.String(), start.Year(), value)
 	}
+
+	fmt.Println("Total", total)
 }
