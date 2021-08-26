@@ -1,29 +1,63 @@
 package main
 
 import (
+	"embed"
+	"encoding/json"
 	"fmt"
+	"html/template"
+	"log"
+	"os"
 	"time"
 )
 
+//go:embed invoice
+var fs embed.FS
+
 const WorkingDaysPerWeek = 5
 
-func main() {
-	now := time.Now()
+type Invoice struct {
+	InvoiceNumber int
+	InvoiceDate   string
+	Lines         []Line
+	Total         int
+}
 
-	startDate := time.Date(now.Year(), now.Month(), 16, 0, 0, 0, 0, now.Location())
-	if startDate.Weekday() == time.Saturday || startDate.Weekday() == time.Sunday {
-		for true {
-			startDate.Add(24 * time.Hour)
-			if startDate.Weekday() != time.Saturday && startDate.Weekday() != time.Sunday {
-				break
-			}
-		}
+type Line struct {
+	Description string
+	Amount      string
+}
+
+type Config struct {
+	StartDate     time.Time `json:"startDate"`
+	EndDate       time.Time `json:"endDate"`
+	InvoiceNumber int       `json:"invoiceNumber"`
+	Rate          int       `json:"rate"`
+	ExtraLines    []Line    `json:"extraLines"`
+}
+
+func main() {
+	config := &Config{}
+
+	configFile, _ := os.Open("config.json")
+
+	err := json.NewDecoder(configFile).Decode(config)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	endDate := time.Date(now.Year(), now.Month()+1, 15, 0, 0, 0, 0, now.Location())
+	invoice := GetInvoice(config)
 
+	file, _ := os.Create("invoice/output.html")
+
+	tpl := template.Must(template.ParseFS(fs, "invoice/invoice.html.tpl"))
+	_ = tpl.Execute(file, invoice)
+
+	_ = file.Close()
+}
+
+func GetInvoice(config *Config) Invoice {
 	var workingDaysCount, workingWeeksCount int
-	for date := startDate; date.Unix() <= endDate.Unix(); date = date.Add(24 * time.Hour) {
+	for date := config.StartDate; date.Unix() <= config.EndDate.Unix(); date = date.Add(24 * time.Hour) {
 		if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
 			workingDaysCount++
 		}
@@ -32,25 +66,19 @@ func main() {
 		}
 	}
 
-	if endDate.Weekday() != time.Friday {
+	if config.EndDate.Weekday() != time.Friday {
 		workingWeeksCount++
 	}
 
-	fmt.Println("Days", workingDaysCount)
-	fmt.Println("Weeks", workingWeeksCount)
-
 	var lengthOfFirstWeek, lengthOfLastWeek int
 
-	for date := startDate; date.Weekday() != time.Saturday; date = date.Add(24 * time.Hour) {
+	for date := config.StartDate; date.Weekday() != time.Saturday; date = date.Add(24 * time.Hour) {
 		lengthOfFirstWeek++
 	}
 
-	for date := endDate; date.Weekday() != time.Sunday; date = date.Add(-24 * time.Hour) {
+	for date := config.EndDate; date.Weekday() != time.Sunday; date = date.Add(-24 * time.Hour) {
 		lengthOfLastWeek++
 	}
-
-	fmt.Println("Length of first week", lengthOfFirstWeek)
-	fmt.Println("Length of last week", lengthOfLastWeek)
 
 	workingDays := make([][]time.Time, workingWeeksCount)
 
@@ -67,10 +95,14 @@ func main() {
 	var count int
 	for i := 0; i < len(workingDays); i++ {
 		for j := 0; j < len(workingDays[i]); j++ {
-			workingDays[i][j] = startDate.Add(time.Duration(count) * 24 * time.Hour)
+			workingDays[i][j] = config.StartDate.Add(time.Duration(count) * 24 * time.Hour)
 			count++
 		}
 	}
+
+	var invoice Invoice
+
+	invoice.Lines = make([]Line, 10)
 
 	var total int
 	for i := 0; i < len(workingDays); i++ {
@@ -78,16 +110,57 @@ func main() {
 		end := workingDays[i][len(workingDays[i])-1]
 
 		unit := "days"
-		days := int(end.Sub(start).Hours() / 24) + 1
+		days := int(end.Sub(start).Hours()/24) + 1
 		if days == 1 {
 			unit = "day"
 		}
 
-		value := 263*days
+		value := config.Rate * days
 		total += value
 
-		fmt.Printf("%d %s of work done in between %s and %s %d @ US263 per day - %d\n", days, unit, start.String(), end.String(), start.Year(), value)
+		invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in between %s and %s @ US%d per day", days, unit, OrdinalDate(start), OrdinalDate(end), config.Rate)
+		invoice.Lines[i].Amount = fmt.Sprintf("USD %d", value)
 	}
 
-	fmt.Println("Total", total)
+	invoice.Total = total
+	invoice.InvoiceDate = config.StartDate.Format("02-01-2006")
+	invoice.InvoiceNumber = config.InvoiceNumber
+
+	return invoice
+}
+
+func Ordinal(x int) string {
+	var suffix string
+	switch x % 10 {
+	case 1:
+		if x%100 != 11 {
+			suffix = "st"
+		} else {
+			suffix = "th"
+		}
+	case 2:
+		if x%100 != 12 {
+			suffix = "nd"
+		} else {
+			suffix = "th"
+		}
+	case 3:
+		if x%100 != 13 {
+			suffix = "rd"
+		} else {
+			suffix = "th"
+		}
+	default:
+		suffix = "th"
+	}
+
+	return fmt.Sprintf("%d%s", x, suffix)
+}
+
+func OrdinalDate(date time.Time) string {
+	day := Ordinal(date.Day())
+	month := date.Month().String()
+	year := date.Year()
+
+	return fmt.Sprintf("%s %s %d", day, month, year)
 }
