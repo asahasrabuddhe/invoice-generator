@@ -1,39 +1,36 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Invoice - {{ .InvoiceNumber }} | {{ .InvoiceDate }}</title>
   <meta name="author" content="Ajitem Sahasrabuddhe">
   <style type="text/css">
-
       body {
-          margin-top: 0px;
-          margin-left: 0px;
+          margin-top: 0;
+          margin-left: 0;
       }
 
       #page_1 {
           position: relative;
           overflow: hidden;
-          margin: 36px 0px 194px 47px;
-          padding: 0px;
+          margin: 36px 0 194px 47px;
+          padding: 0;
           border: none;
-          width: 769px;
+          width: 819px;
       }
 
       #page_1 #id1_1 {
           border: none;
-          margin: 0px 0px 0px 0px;
-          padding: 0px;
-          border: none;
-          width: 721px;
+          margin: 0 0 0 0;
+          padding: 0;
+          width: 781px;
           overflow: hidden;
       }
 
       #page_1 #id1_2 {
           border: none;
-          margin: 54px 0px 0px 246px;
-          padding: 0px;
-          border: none;
+          margin: 54px 0 0 246px;
+          padding: 0;
           width: 523px;
           overflow: hidden;
       }
@@ -113,21 +110,9 @@
           line-height: 5px;
       }
 
-      .ft13 {
-          font: bold 9px 'Calibri';
-          line-height: 11px;
-          position: relative;
-          bottom: 5px;
-      }
-
       .ft14 {
           font: bold 15px 'Calibri';
           line-height: 18px;
-      }
-
-      .ft15 {
-          font: bold 15px 'Calibri';
-          line-height: 17px;
       }
 
       .ft16 {
@@ -154,160 +139,142 @@
 
       .p0 {
           text-align: left;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
           /*white-space: nowrap;*/
       }
 
       .p1 {
           text-align: right;
           padding-right: 1px;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
           white-space: nowrap;
       }
 
       .p2 {
           text-align: right;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
           white-space: nowrap;
       }
 
       .p3 {
           text-align: right;
           padding-right: 167px;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
           white-space: nowrap;
       }
 
       .p4 {
           text-align: right;
           padding-right: 166px;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
           white-space: nowrap;
       }
 
       .p5 {
           text-align: left;
           padding-left: 1px;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
           white-space: nowrap;
       }
 
       .p6 {
           text-align: left;
-          margin-top: 0px;
-          margin-bottom: 0px;
+          margin-top: 0;
+          margin-bottom: 0;
       }
 
       .td0 {
-          padding: 0px;
-          margin: 0px;
-          width: 495px;
+          padding: 0;
+          margin: 0;
+          width: 445px;
           vertical-align: bottom;
       }
 
       .td1 {
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 59px;
           vertical-align: bottom;
       }
 
       .td2 {
-          padding: 0px;
-          margin: 0px;
-          width: 166px;
+          padding: 0;
+          margin: 0;
+          width: 116px;
           vertical-align: bottom;
       }
 
       .td3 {
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 225px;
           vertical-align: top;
       }
 
       .td4 {
           border-bottom: #bdd6ee 1px solid;
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 495px;
           vertical-align: bottom;
       }
 
       .td5 {
           border-bottom: #bdd6ee 1px solid;
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 59px;
           vertical-align: bottom;
       }
 
       .td6 {
           border-bottom: #9cc2e5 1px solid;
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 495px;
           vertical-align: bottom;
       }
 
       .td7 {
           border-bottom: #9cc2e5 1px solid;
-          padding: 0px;
-          margin: 0px;
-          width: 59px;
-          vertical-align: bottom;
-      }
-
-      .td8 {
-          border-top: #bdd6ee 1px solid;
-          border-bottom: #bdd6ee 1px solid;
-          padding: 0px;
-          margin: 0px;
-          width: 495px;
-          vertical-align: bottom;
-      }
-
-      .td9 {
-          border-top: #bdd6ee 1px solid;
-          border-bottom: #bdd6ee 1px solid;
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 59px;
           vertical-align: bottom;
       }
 
       .td10 {
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 490px;
           vertical-align: bottom;
       }
 
       .td11 {
-          padding: 0px;
-          margin: 0px;
-          width: 65px;
+          padding: 0;
+          margin: 0;
+          width: 137px;
           vertical-align: bottom;
       }
 
       .td12 {
           border-bottom: #bdd6ee 1px solid;
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 490px;
           vertical-align: bottom;
       }
 
       .td13 {
           border-bottom: #bdd6ee 1px solid;
-          padding: 0px;
-          margin: 0px;
+          padding: 0;
+          margin: 0;
           width: 65px;
           vertical-align: bottom;
       }
@@ -380,10 +347,6 @@
           height: 21px;
       }
 
-      .tr17 {
-          height: 23px;
-      }
-
       .tr18 {
           height: 6px;
       }
@@ -392,16 +355,8 @@
           height: 7px;
       }
 
-      .tr20 {
-          height: 24px;
-      }
-
-      .tr21 {
-          height: 26px;
-      }
-
       .t0 {
-          width: 720px;
+          width: 770px;
           margin-left: 1px;
           font: bold 15px 'Calibri';
       }
@@ -517,8 +472,8 @@
       </tr>
       {{ range .Lines }}
       <tr>
-        <td class="tr16 td0"><p class="p0 ft14">{{ .Description }}</p></td>
-        <td colspan="2" class="tr16 td3"><p class="p4 ft14">{{ .Amount }}</p></td>
+        <td class="tr16 td0"><p class="p0 ft14">{{ formatDescription .Description }}</p></td>
+        <td colspan="2" class="tr16 td3"><p class="p4 ft14" style="text-align: right">{{ .Amount }}</p></td>
       </tr>
       <tr>
         <td class="tr18 td4"><p class="p0 ft16">&nbsp;</p></td>
@@ -532,7 +487,7 @@
       <tbody>
       <tr>
         <td class="tr16 td10"><p class="p5 ft5">Total</p></td>
-        <td class="tr16 td11"><p class="p0 ft18" style="white-space: nowrap">USD {{ .Total }}</p></td>
+        <td class="tr16 td11"><p class="p0 ft18" style="white-space: nowrap; text-align: right">USD {{ .Total }}</p></td>
       </tr>
       <tr>
         <td class="tr2 td12"><p class="p0 ft3">&nbsp;</p></td>
@@ -547,5 +502,3 @@
 </div>
 </body>
 </html>
-
-<!-- <span class="ft13">th </span> -->

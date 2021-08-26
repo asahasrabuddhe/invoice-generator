@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"testing"
 	"time"
 )
@@ -263,6 +264,31 @@ func TestOrdinalDate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := OrdinalDate(tt.args.date); got != tt.want {
 				t.Errorf("OrdinalDate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatDescription(t *testing.T) {
+	type args struct {
+		line string
+	}
+	tests := []struct {
+		name string
+		args args
+		want template.HTML
+	}{
+		{
+			name: "1",
+			args: args{
+				//line: "5 days of work done in between 16th September 2019 and "
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FormatDescription(tt.args.line); got != tt.want {
+				t.Errorf("FormatDescription() = %v, want %v", got, tt.want)
 			}
 		})
 	}

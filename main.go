@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 	"time"
+
+	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
 )
 
 //go:embed invoice
@@ -36,26 +41,62 @@ type Config struct {
 }
 
 func main() {
-	config := &Config{}
+	config := Config{}
 
-	configFile, _ := os.Open("config.json")
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	err := json.NewDecoder(configFile).Decode(config)
+	err = json.NewDecoder(configFile).Decode(&config)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	invoice := GetInvoice(config)
 
-	file, _ := os.Create("invoice/output.html")
+	var buf bytes.Buffer
 
-	tpl := template.Must(template.ParseFS(fs, "invoice/invoice.html.tpl"))
-	_ = tpl.Execute(file, invoice)
+	tpl := template.Must(
+		template.
+			New("invoice.html.tpl").
+			Funcs(template.FuncMap{"formatDescription": FormatDescription}).
+			ParseFS(fs, "invoice/invoice.html.tpl"),
+	)
 
-	_ = file.Close()
+	err = tpl.Execute(&buf, invoice)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	page := wkhtmltopdf.NewPageReader(&buf)
+	page.EnableLocalFileAccess.Set(true)
+	page.EnableLocalFileAccess.Set(true)
+	page.UserStyleSheet.Set("invoice/font.css")
+	page.Zoom.Set(1.45)
+
+	pdfg, err := wkhtmltopdf.NewPDFGenerator()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pdfg.Dpi.Set(300)
+	pdfg.Orientation.Set(wkhtmltopdf.OrientationPortrait)
+	pdfg.PageSize.Set(wkhtmltopdf.PageSizeA4)
+	pdfg.AddPage(page)
+
+	err = pdfg.Create()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = pdfg.WriteFile(GetFileName(config))
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
-func GetInvoice(config *Config) Invoice {
+func GetInvoice(config Config) Invoice {
 	var workingDaysCount, workingWeeksCount int
 	for date := config.StartDate; date.Unix() <= config.EndDate.Unix(); date = date.Add(24 * time.Hour) {
 		if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
@@ -95,6 +136,9 @@ func GetInvoice(config *Config) Invoice {
 	var count int
 	for i := 0; i < len(workingDays); i++ {
 		for j := 0; j < len(workingDays[i]); j++ {
+			if config.StartDate.Add(time.Duration(count)*24*time.Hour).Weekday() == time.Saturday {
+				count += 2
+			}
 			workingDays[i][j] = config.StartDate.Add(time.Duration(count) * 24 * time.Hour)
 			count++
 		}
@@ -118,7 +162,11 @@ func GetInvoice(config *Config) Invoice {
 		value := config.Rate * days
 		total += value
 
-		invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in between %s and %s @ US%d per day", days, unit, OrdinalDate(start), OrdinalDate(end), config.Rate)
+		if start == end {
+			invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in on %s @ US%d per day", days, unit, OrdinalDate(start), config.Rate)
+		} else {
+			invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in between %s and %s @ US%d per day", days, unit, OrdinalDate(start), OrdinalDate(end), config.Rate)
+		}
 		invoice.Lines[i].Amount = fmt.Sprintf("USD %d", value)
 	}
 
@@ -163,4 +211,33 @@ func OrdinalDate(date time.Time) string {
 	year := date.Year()
 
 	return fmt.Sprintf("%s %s %d", day, month, year)
+}
+
+func FormatDescription(line string) template.HTML {
+	pattern := regexp.MustCompile(`(\d+)(st|nd|rd|th)`)
+
+	if pattern.MatchString(line) {
+		matches := pattern.FindAllStringSubmatch(line, -1)
+		for _, match := range matches {
+			number := match[1]
+			suffix := match[2]
+			line = strings.Replace(line, match[0], fmt.Sprintf(`%s<span class="ft13">%s </span>`, number, suffix), -1)
+		}
+	}
+
+	return template.HTML(line)
+}
+
+func GetFileName(config Config) string {
+	extension := ".pdf"
+
+	if config.StartDate.Month() == config.EndDate.Month() {
+		return fmt.Sprintf("%d - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.StartDate.Year(), extension)
+	} else {
+		if config.StartDate.Year() == config.EndDate.Year() {
+			return fmt.Sprintf("%d - %s - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.EndDate.Month().String(), config.StartDate.Year(), extension)
+		} else {
+			return fmt.Sprintf("%d - %s %d - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.StartDate.Year(), config.EndDate.Month().String(), config.EndDate.Year(), extension)
+		}
+	}
 }
