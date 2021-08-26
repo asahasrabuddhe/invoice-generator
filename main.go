@@ -8,11 +8,13 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
+	"github.com/urfave/cli/v2"
 )
 
 //go:embed invoice
@@ -41,16 +43,46 @@ type Config struct {
 }
 
 func main() {
-	config := Config{}
+	app := cli.NewApp()
 
-	configFile, err := os.Open("config.json")
+	app.Authors = []*cli.Author{
+		{
+			Name:  "Ajitem Sahasrabuddhe",
+			Email: "ajitem@engineering.com",
+		},
+	}
+
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:     "config-file",
+			Usage:    "path to the configuration file",
+			Required: true,
+		},
+	}
+
+	app.Action = Action
+
+	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatalln(err)
+	}
+}
+
+func Action(c *cli.Context) error {
+	configFilePath := c.String("config-file")
+
+	outFilePath := filepath.Dir(configFilePath)
+
+	config := Config{}
+
+	configFile, err := os.Open(configFilePath)
+	if err != nil {
+		return err
 	}
 
 	err = json.NewDecoder(configFile).Decode(&config)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	invoice := GetInvoice(config)
@@ -66,7 +98,7 @@ func main() {
 
 	err = tpl.Execute(&buf, invoice)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	page := wkhtmltopdf.NewPageReader(&buf)
@@ -87,13 +119,15 @@ func main() {
 
 	err = pdfg.Create()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
-	err = pdfg.WriteFile(GetFileName(config))
+	err = pdfg.WriteFile(filepath.Join(outFilePath, GetFileName(config)))
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
+
+	return nil
 }
 
 func GetInvoice(config Config) Invoice {
