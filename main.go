@@ -52,11 +52,18 @@ func main() {
 		},
 	}
 
+	app.Commands = []*cli.Command{
+		{
+			Name:   "parse-time-sheet",
+			Usage:  "parse time sheet",
+			Action: ParseAction,
+		},
+	}
+
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:     "config-file",
-			Usage:    "path to the configuration file",
-			Required: true,
+			Name:  "config-file",
+			Usage: "path to the configuration file",
 		},
 	}
 
