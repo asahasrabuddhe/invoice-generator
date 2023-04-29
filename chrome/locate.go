@@ -1,4 +1,4 @@
-package main
+package chrome
 
 import (
 	"os"
@@ -9,11 +9,11 @@ import (
 
 // ChromeExecutable returns a string which points to the preferred Chrome
 // executable file.
-var ChromeExecutable = LocateChrome
+var ChromeExecutable = Locate
 
-// LocateChrome returns a path to the Chrome binary, or an empty string if
+// Locate returns a path to the Chrome binary, or an empty string if
 // Chrome installation is not found.
-func LocateChrome() string {
+func Locate() string {
 
 	// If env variable "LORCACHROME" specified and it exists
 	if path, ok := os.LookupEnv("LORCACHROME"); ok {

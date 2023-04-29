@@ -1,4 +1,4 @@
-package main
+package invoiceGenerator
 
 import (
 	"encoding/json"

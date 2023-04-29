@@ -1,26 +1,23 @@
 package main
 
 import (
-	"bytes"
-	"embed"
 	"fmt"
-	"github.com/xuri/excelize/v2"
-	"html/template"
 	"log"
 	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
-)
+	"github.com/xuri/excelize/v2"
 
-//go:embed invoice
-var fs embed.FS
+	"invoiceGenerator"
+	"invoiceGenerator/chrome"
+	"invoiceGenerator/template"
+)
 
 func main() {
 	app := cli.NewApp()
@@ -28,14 +25,25 @@ func main() {
 	app.Authors = []*cli.Author{
 		{
 			Name:  "Ajitem Sahasrabuddhe",
-			Email: "ajitem@engineering.com",
+			Email: "ajitem.s@outlook.com",
 		},
 	}
 
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:  "config-file",
-			Usage: "path to the configuration file",
+			Name:    "config-file",
+			Aliases: []string{"c"},
+			Usage:   "path to the configuration file",
+		},
+		&cli.StringFlag{
+			Name:    "timesheet-path",
+			Aliases: []string{"t"},
+			Usage:   "path to the timesheet file",
+		},
+		&cli.StringFlag{
+			Name:    "output-file",
+			Aliases: []string{"o"},
+			Usage:   "path to the output file",
 		},
 	}
 
@@ -47,22 +55,32 @@ func main() {
 	}
 }
 
+//-t "/Users/ajitem/Downloads/Apr_2023_Completed_Work_1682709355.xlsx"
+
 func Action(c *cli.Context) error {
 	configFilePath := c.String("config-file")
+	outFilePath := c.String("output-file")
 
-	outFilePath := filepath.Dir(configFilePath)
+	if outFilePath == "" {
+		outFilePath = filepath.Dir(configFilePath)
+	}
 
 	configFile, err := os.Open(configFilePath)
 	if err != nil {
 		return err
 	}
 
-	invoice, err := NewInvoice(configFile)
+	invoice, err := invoiceGenerator.NewInvoice(configFile)
 	if err != nil {
 		return err
 	}
 
-	file, err := excelize.OpenFile("/Users/ajitem/Downloads/Apr_2023_Completed_Work_1682709355.xlsx")
+	err = configFile.Close()
+	if err != nil {
+		return err
+	}
+
+	file, err := excelize.OpenFile(c.String("timesheet-path"))
 	if err != nil {
 		return err
 	}
@@ -92,7 +110,7 @@ func Action(c *cli.Context) error {
 			_, lastWeek := invoice.End.ISOWeek()
 			_, firstWeek := invoice.Start.ISOWeek()
 
-			invoice.Lines = make([]Line, lastWeek-firstWeek+len(invoice.ExtraLines))
+			invoice.Lines = make([]invoiceGenerator.Line, lastWeek-firstWeek+len(invoice.ExtraLines))
 
 			continue
 		}
@@ -148,7 +166,7 @@ func Action(c *cli.Context) error {
 	invoice.Total = totalAmount
 
 	for i, extraLine := range invoice.ExtraLines {
-		invoice.Lines[line+i+1] = Line{
+		invoice.Lines[line+i+1] = invoiceGenerator.Line{
 			Description: extraLine.Description,
 			Amount:      extraLine.Amount,
 		}
@@ -156,19 +174,7 @@ func Action(c *cli.Context) error {
 		invoice.Total += extraLine.Amount
 	}
 
-	var buf bytes.Buffer
-
-	tpl := template.Must(
-		template.
-			New("invoice.html.tpl").
-			Funcs(template.FuncMap{
-				"formatDescription": FormatDescription,
-				"formatAmount":      FormatAmount,
-			}).
-			ParseFS(fs, "invoice/invoice.html.tpl"),
-	)
-
-	err = tpl.Execute(&buf, invoice)
+	tpl, err := template.Get()
 	if err != nil {
 		return err
 	}
@@ -178,7 +184,7 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	_, err = f.Write(buf.Bytes())
+	err = tpl.Execute(f, invoice)
 	if err != nil {
 		return err
 	}
@@ -188,7 +194,7 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	path := LocateChrome()
+	path := chrome.Locate()
 
 	err = exec.
 		CommandContext(
@@ -244,35 +250,7 @@ func OrdinalDate(date time.Time) string {
 	return fmt.Sprintf("%s %s %d", day, month, year)
 }
 
-func FormatDescription(line string) template.HTML {
-	pattern := regexp.MustCompile(`(\d+)(st|nd|rd|th)`)
-	if pattern.MatchString(line) {
-		matches := pattern.FindAllStringSubmatch(line, -1)
-		for _, match := range matches {
-			number := match[1]
-			suffix := match[2]
-			line = strings.ReplaceAll(line, match[0], fmt.Sprintf(`%s<span class="ordinal">%s</span>`, number, suffix))
-		}
-	}
-
-	pattern = regexp.MustCompile(`@ US\$ (\d+\.\d+) per day`)
-	if pattern.MatchString(line) {
-		matches := pattern.FindAllStringSubmatch(line, -1)
-		for _, match := range matches {
-			line = strings.ReplaceAll(line, match[0], fmt.Sprintf(`<span class="text-[0.75rem] font-light">%s</span>`, match[0]))
-		}
-	}
-
-	line = strings.ReplaceAll(line, "\n", "<br>")
-
-	return template.HTML(`<p class="text-sm text-left font-medium text-slate-700">` + line + `</p>`)
-}
-
-func FormatAmount(amount float64) string {
-	return fmt.Sprintf(`US$ %.2f`, amount)
-}
-
-func GetFileName(invoice *Invoice) string {
+func GetFileName(invoice *invoiceGenerator.Invoice) string {
 	extension := ".pdf"
 
 	return fmt.Sprintf("%s - %s %d%s", invoice.Number, invoice.Start.Month().String(), invoice.Start.Year(), extension)
@@ -300,7 +278,7 @@ func GetEndOfWeek(t time.Time) time.Time {
 	return o
 }
 
-func CreateLine(thisDay time.Time, totalHours float64, invoice *Invoice) Line {
+func CreateLine(thisDay time.Time, totalHours float64, invoice *invoiceGenerator.Invoice) invoiceGenerator.Line {
 	start := GetStartOfWeek(thisDay.AddDate(0, 0, -1))
 	end := GetEndOfWeek(start)
 	daysWorked := totalHours / 8
@@ -321,7 +299,7 @@ func CreateLine(thisDay time.Time, totalHours float64, invoice *Invoice) Line {
 
 	amount := daysWorked * invoice.Rate
 
-	return Line{
+	return invoiceGenerator.Line{
 		Description: description,
 		Amount:      amount,
 	}

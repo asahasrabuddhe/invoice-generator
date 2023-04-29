@@ -1,9 +1,8 @@
-module invoice-generator
+module invoiceGenerator
 
 go 1.17
 
 require (
-	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.7.1
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xuri/excelize/v2 v2.7.1
 )
