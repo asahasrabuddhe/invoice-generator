@@ -25,21 +25,41 @@ const WorkingDaysPerWeek = 5
 type Invoice struct {
 	InvoiceNumber int
 	InvoiceDate   string
+	FromEmail     string
+	FromName      string
+	FromPhone1    string
+	FromPhone2    string
+	FromAddress   Address
+	ToName        string
+	ToAddress     Address
 	Lines         []Line
-	Total         int
+	Total         float64
 }
 
 type Line struct {
 	Description string
-	Amount      string
+	Amount      float64
 }
 
 type Config struct {
 	StartDate     time.Time `json:"startDate"`
 	EndDate       time.Time `json:"endDate"`
 	InvoiceNumber int       `json:"invoiceNumber"`
-	Rate          int       `json:"rate"`
+	Rate          float64   `json:"rate"`
+	FromEmail     string    `json:"fromEmail"`
+	FromName      string    `json:"fromName"`
+	FromPhone1    string    `json:"fromPhone1"`
+	FromPhone2    string    `json:"fromPhone2"`
+	FromAddress   Address   `json:"fromAddress"`
+	ToName        string    `json:"toName"`
+	ToAddress     Address   `json:"toAddress"`
 	ExtraLines    []Line    `json:"extraLines"`
+}
+
+type Address struct {
+	Line1 string `json:"line1"`
+	Line2 string `json:"line2"`
+	Line3 string `json:"line3"`
 }
 
 func main() {
@@ -111,15 +131,14 @@ func Action(c *cli.Context) error {
 	page := wkhtmltopdf.NewPageReader(&buf)
 	page.EnableLocalFileAccess.Set(true)
 	page.EnableLocalFileAccess.Set(true)
-	page.UserStyleSheet.Set("invoice/font.css")
-	page.Zoom.Set(1.45)
+	page.Zoom.Set(1.0)
 
 	pdfg, err := wkhtmltopdf.NewPDFGenerator()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	pdfg.Dpi.Set(300)
+	pdfg.Dpi.Set(600)
 	pdfg.Orientation.Set(wkhtmltopdf.OrientationPortrait)
 	pdfg.PageSize.Set(wkhtmltopdf.PageSizeA4)
 	pdfg.AddPage(page)
@@ -138,82 +157,89 @@ func Action(c *cli.Context) error {
 }
 
 func GetInvoice(config Config) Invoice {
-	var workingDaysCount, workingWeeksCount int
-	for date := config.StartDate; date.Unix() <= config.EndDate.Unix(); date = date.Add(24 * time.Hour) {
-		if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
-			workingDaysCount++
-		}
-		if date.Weekday() == time.Friday {
-			workingWeeksCount++
-		}
-	}
-
-	if config.EndDate.Weekday() != time.Friday {
-		workingWeeksCount++
-	}
-
-	var lengthOfFirstWeek, lengthOfLastWeek int
-
-	for date := config.StartDate; date.Weekday() != time.Saturday; date = date.Add(24 * time.Hour) {
-		lengthOfFirstWeek++
-	}
-
-	for date := config.EndDate; date.Weekday() != time.Sunday; date = date.Add(-24 * time.Hour) {
-		lengthOfLastWeek++
-	}
-
-	workingDays := make([][]time.Time, workingWeeksCount)
-
-	for i := 0; i < workingWeeksCount; i++ {
-		if i == 0 {
-			workingDays[i] = make([]time.Time, lengthOfFirstWeek)
-		} else if i == workingWeeksCount-1 {
-			workingDays[i] = make([]time.Time, lengthOfLastWeek)
-		} else {
-			workingDays[i] = make([]time.Time, WorkingDaysPerWeek)
-		}
-	}
-
-	var count int
-	for i := 0; i < len(workingDays); i++ {
-		for j := 0; j < len(workingDays[i]); j++ {
-			if config.StartDate.Add(time.Duration(count)*24*time.Hour).Weekday() == time.Saturday {
-				count += 2
-			}
-			workingDays[i][j] = config.StartDate.Add(time.Duration(count) * 24 * time.Hour)
-			count++
-		}
-	}
+	//var workingDaysCount, workingWeeksCount int
+	//for date := config.StartDate; date.Unix() <= config.EndDate.Unix(); date = date.Add(24 * time.Hour) {
+	//	if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
+	//		workingDaysCount++
+	//	}
+	//	if date.Weekday() == time.Friday {
+	//		workingWeeksCount++
+	//	}
+	//}
+	//
+	//if config.EndDate.Weekday() != time.Friday {
+	//	workingWeeksCount++
+	//}
+	//
+	//var lengthOfFirstWeek, lengthOfLastWeek int
+	//
+	//for date := config.StartDate; date.Weekday() != time.Saturday; date = date.Add(24 * time.Hour) {
+	//	lengthOfFirstWeek++
+	//}
+	//
+	//for date := config.EndDate; date.Weekday() != time.Sunday; date = date.Add(-24 * time.Hour) {
+	//	lengthOfLastWeek++
+	//}
+	//
+	//workingDays := make([][]time.Time, workingWeeksCount)
+	//
+	//for i := 0; i < workingWeeksCount; i++ {
+	//	if i == 0 {
+	//		workingDays[i] = make([]time.Time, lengthOfFirstWeek)
+	//	} else if i == workingWeeksCount-1 {
+	//		workingDays[i] = make([]time.Time, lengthOfLastWeek)
+	//	} else {
+	//		workingDays[i] = make([]time.Time, WorkingDaysPerWeek)
+	//	}
+	//}
+	//
+	//var count int
+	//for i := 0; i < len(workingDays); i++ {
+	//	for j := 0; j < len(workingDays[i]); j++ {
+	//		if config.StartDate.Add(time.Duration(count)*24*time.Hour).Weekday() == time.Saturday {
+	//			count += 2
+	//		}
+	//		workingDays[i][j] = config.StartDate.Add(time.Duration(count) * 24 * time.Hour)
+	//		count++
+	//	}
+	//}
 
 	var invoice Invoice
 
-	invoice.Lines = make([]Line, 10)
+	//invoice.Lines = make([]Line, 10)
 
-	var total int
-	for i := 0; i < len(workingDays); i++ {
-		start := workingDays[i][0]
-		end := workingDays[i][len(workingDays[i])-1]
+	//var total int
+	//for i := 0; i < len(workingDays); i++ {
+	//	start := workingDays[i][0]
+	//	end := workingDays[i][len(workingDays[i])-1]
+	//
+	//	unit := "days"
+	//	days := int(end.Sub(start).Hours()/24) + 1
+	//	if days == 1 {
+	//		unit = "day"
+	//	}
+	//
+	//	value := config.Rate * days
+	//	total += value
+	//
+	//	if start == end {
+	//		invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in on %s @ US%d per day", days, unit, OrdinalDate(start), config.Rate)
+	//	} else {
+	//		invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in between %s and %s @ US%d per day", days, unit, OrdinalDate(start), OrdinalDate(end), config.Rate)
+	//	}
+	//	invoice.Lines[i].Amount = value
+	//}
 
-		unit := "days"
-		days := int(end.Sub(start).Hours()/24) + 1
-		if days == 1 {
-			unit = "day"
-		}
-
-		value := config.Rate * days
-		total += value
-
-		if start == end {
-			invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in on %s @ US%d per day", days, unit, OrdinalDate(start), config.Rate)
-		} else {
-			invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in between %s and %s @ US%d per day", days, unit, OrdinalDate(start), OrdinalDate(end), config.Rate)
-		}
-		invoice.Lines[i].Amount = fmt.Sprintf("USD %d", value)
-	}
-
-	invoice.Total = total
+	//invoice.Total = total
 	invoice.InvoiceDate = config.StartDate.Format("02-01-2006")
 	invoice.InvoiceNumber = config.InvoiceNumber
+	invoice.FromEmail = config.FromEmail
+	invoice.FromName = config.FromName
+	invoice.FromPhone1 = config.FromPhone1
+	invoice.FromPhone2 = config.FromPhone2
+	invoice.FromAddress = config.FromAddress
+	invoice.ToName = config.ToName
+	invoice.ToAddress = config.ToAddress
 
 	return invoice
 }
@@ -269,16 +295,12 @@ func FormatDescription(line string) template.HTML {
 	return template.HTML(line)
 }
 
+func FormatAmount(amount float64) string {
+	return fmt.Sprintf(`USD %.2f`, amount)
+}
+
 func GetFileName(config Config) string {
 	extension := ".pdf"
 
-	if config.StartDate.Month() == config.EndDate.Month() {
-		return fmt.Sprintf("%d - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.StartDate.Year(), extension)
-	} else {
-		if config.StartDate.Year() == config.EndDate.Year() {
-			return fmt.Sprintf("%d - %s - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.EndDate.Month().String(), config.StartDate.Year(), extension)
-		} else {
-			return fmt.Sprintf("%d - %s %d - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.StartDate.Year(), config.EndDate.Month().String(), config.EndDate.Year(), extension)
-		}
-	}
+	return fmt.Sprintf("%d - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.StartDate.Year(), extension)
 }

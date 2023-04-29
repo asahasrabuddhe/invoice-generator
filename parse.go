@@ -1,16 +1,40 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/urfave/cli/v2"
 	"github.com/xuri/excelize/v2"
+	"html/template"
 	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func ParseAction(_ *cli.Context) error {
+func ParseAction(c *cli.Context) error {
+	configFilePath := c.String("config-file")
+
+	outFilePath := filepath.Dir(configFilePath)
+
+	config := Config{}
+
+	configFile, err := os.Open(configFilePath)
+	if err != nil {
+		return err
+	}
+
+	err = json.NewDecoder(configFile).Decode(&config)
+	if err != nil {
+		return err
+	}
+
+	invoice := GetInvoice(config)
+
 	file, err := excelize.OpenFile("/Users/ajitem/Downloads/Apr_2023_Completed_Work_1682709355.xlsx")
 	if err != nil {
 		return err
@@ -33,10 +57,15 @@ func ParseAction(_ *cli.Context) error {
 				log.Fatal(err)
 			}
 
-			firstOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
-			lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+			config.StartDate = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+			config.EndDate = config.StartDate.AddDate(0, 1, -1)
 
-			timesheet = make([]float64, lastOfMonth.Day())
+			timesheet = make([]float64, config.EndDate.Day())
+
+			_, lastWeek := config.EndDate.ISOWeek()
+			_, firstWeek := config.StartDate.ISOWeek()
+
+			invoice.Lines = make([]Line, lastWeek-firstWeek)
 
 			continue
 		}
@@ -63,8 +92,9 @@ func ParseAction(_ *cli.Context) error {
 	}
 
 	_, currentWeek := t.ISOWeek()
-	var totalHours float64
+	var totalHours, totalAmount float64
 	var thisDay time.Time
+	var daysWorked, line int
 
 	for day, hours := range timesheet {
 		thisDay = t.AddDate(0, 0, day)
@@ -79,13 +109,23 @@ func ParseAction(_ *cli.Context) error {
 			end := start.AddDate(0, 0, 7-int(start.Weekday()))
 
 			if totalHours != 0 {
-				fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
+				//fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
+				invoice.Lines[line] = Line{
+					Description: fmt.Sprintf("%d days of work done in between %s and %s @ US$ %.2f per day", daysWorked, start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), config.Rate),
+					Amount:      (totalHours / 8) * config.Rate,
+				}
 				totalHours = 0
+				daysWorked = 0
+				totalAmount += invoice.Lines[line].Amount
+				line++
 			}
 		}
 
 		//fmt.Println(week, thisDay.Format("02 Jan 2006"), hours)
 		totalHours += hours
+		if hours != 0 {
+			daysWorked++
+		}
 
 	}
 
@@ -95,7 +135,55 @@ func ParseAction(_ *cli.Context) error {
 		start = start.AddDate(0, 0, 1)
 	}
 
-	fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
+	//fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
+	invoice.Lines[line] = Line{
+		Description: fmt.Sprintf("%d days of work done in between %s and %s @ US$ %.2f per day", daysWorked, start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), config.Rate),
+		Amount:      (totalHours / 8) * config.Rate,
+	}
+	totalHours = 0
+	totalAmount += invoice.Lines[line].Amount
+
+	invoice.Total = totalAmount
+	invoice.InvoiceDate = time.Now().Format("02-01-2006")
+
+	var buf bytes.Buffer
+
+	tpl := template.Must(
+		template.
+			New("invoice.html.tpl").
+			Funcs(template.FuncMap{
+				"formatDescription": FormatDescription,
+				"formatAmount":      FormatAmount,
+			}).
+			ParseFS(fs, "invoice/invoice.html.tpl"),
+	)
+
+	err = tpl.Execute(&buf, invoice)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(filepath.Join(outFilePath, GetFileName(config)+".html"))
+	if err != nil {
+		return err
+	}
+
+	_, _ = f.Write(buf.Bytes())
+	_ = f.Close()
+
+	path := LocateChrome()
+
+	err = exec.
+		CommandContext(
+			c.Context, path, "--headless", "--disable-gpu", "--no-pdf-header-footer",
+			"--print-to-pdf="+filepath.Join(outFilePath, GetFileName(config)),
+			filepath.Join(outFilePath, GetFileName(config)+".html"),
+		).Run()
+	if err != nil {
+		return err
+	}
+
+	//_ = os.Remove(f.Name())
 
 	return nil
 }
