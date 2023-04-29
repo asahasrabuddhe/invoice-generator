@@ -42,7 +42,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 }
 
@@ -80,7 +80,7 @@ func Action(c *cli.Context) error {
 		if i == 0 {
 			t, err = time.Parse("Jan 2006", strings.Split(row[0], " :")[0])
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			invoice.Start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
@@ -99,7 +99,7 @@ func Action(c *cli.Context) error {
 		case 1:
 			date, err = time.Parse("Mon Jan 02", row[0])
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			date = date.AddDate(t.Year(), 0, 0)
@@ -107,12 +107,12 @@ func Action(c *cli.Context) error {
 			var val string
 			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("C%d", i+1))
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			timesheet[date.Day()-1], err = strconv.ParseFloat(val, 64)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
@@ -193,8 +193,15 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	_, _ = f.Write(buf.Bytes())
-	_ = f.Close()
+	_, err = f.Write(buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	err = f.Close()
+	if err != nil {
+		return err
+	}
 
 	path := LocateChrome()
 
@@ -208,7 +215,10 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	//_ = os.Remove(f.Name())
+	err = os.Remove(f.Name())
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
