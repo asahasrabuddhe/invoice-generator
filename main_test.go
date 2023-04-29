@@ -257,28 +257,28 @@ func TestOrdinalDate(t *testing.T) {
 			args: args{
 				date: time.Date(2019, time.September, 16, 0, 0, 0, 0, loc),
 			},
-			want: "16th September 2019",
+			want: "16th Sep 2019",
 		},
 		{
 			name: "03/09/2019",
 			args: args{
 				date: time.Date(2019, time.September, 3, 0, 0, 0, 0, loc),
 			},
-			want: "3rd September 2019",
+			want: "3rd Sep 2019",
 		},
 		{
 			name: "01/09/2019",
 			args: args{
 				date: time.Date(2019, time.September, 1, 0, 0, 0, 0, loc),
 			},
-			want: "1st September 2019",
+			want: "1st Sep 2019",
 		},
 		{
 			name: "02/09/2019",
 			args: args{
 				date: time.Date(2019, time.September, 2, 0, 0, 0, 0, loc),
 			},
-			want: "2nd September 2019",
+			want: "2nd Sep 2019",
 		},
 	}
 	for _, tt := range tests {
