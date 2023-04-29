@@ -7,6 +7,7 @@ import (
 	"github.com/xuri/excelize/v2"
 	"html/template"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -120,7 +121,7 @@ func Action(c *cli.Context) error {
 	_, currentWeek := t.ISOWeek()
 	var totalHours, totalAmount float64
 	var thisDay time.Time
-	var daysWorked, line int
+	var line int
 
 	for day, hours := range timesheet {
 		thisDay = time.Date(t.Year(), t.Month(), day+1, 0, 0, 0, 0, time.Local)
@@ -130,9 +131,8 @@ func Action(c *cli.Context) error {
 			currentWeek = week
 
 			if totalHours != 0 {
-				invoice.Lines[line] = CreateLine(thisDay, daysWorked, totalHours, invoice)
+				invoice.Lines[line] = CreateLine(thisDay, totalHours, invoice)
 				totalHours = 0
-				daysWorked = 0
 				totalAmount += invoice.Lines[line].Amount
 				line++
 			}
@@ -140,13 +140,9 @@ func Action(c *cli.Context) error {
 
 		fmt.Println(week, thisDay.Format("02 Jan 2006"), hours)
 		totalHours += hours
-		if hours != 0 {
-			daysWorked++
-		}
-
 	}
 
-	invoice.Lines[line] = CreateLine(thisDay, daysWorked, totalHours, invoice)
+	invoice.Lines[line] = CreateLine(thisDay, totalHours, invoice)
 	totalHours = 0
 	totalAmount += invoice.Lines[line].Amount
 
@@ -289,24 +285,26 @@ func GetEndOfWeek(t time.Time) time.Time {
 	return o
 }
 
-func CreateLine(thisDay time.Time, daysWorked int, totalHours float64, invoice *Invoice) Line {
+func CreateLine(thisDay time.Time, totalHours float64, invoice *Invoice) Line {
 	start := GetStartOfWeek(thisDay.AddDate(0, 0, -1))
 	end := GetEndOfWeek(start)
+	daysWorked := totalHours / 8
+	daysWorked = math.Round(daysWorked*100) / 100
 
 	var description string
 	if !start.Equal(end) {
 		description = fmt.Sprintf(
-			"%d days of work done in between %s and %s\n@ US$ %.2f per day",
+			"%.2f days of work done in between %s and %s\n@ US$ %.2f per day",
 			daysWorked, OrdinalDate(start), OrdinalDate(end), invoice.Rate,
 		)
 	} else {
 		description = fmt.Sprintf(
-			"%d day of work done in on %s\n@ US$ %.2f per day",
+			"%.2f day of work done in on %s\n@ US$ %.2f per day",
 			daysWorked, OrdinalDate(start), invoice.Rate,
 		)
 	}
 
-	amount := (totalHours / 8) * invoice.Rate
+	amount := daysWorked * invoice.Rate
 
 	return Line{
 		Description: description,
