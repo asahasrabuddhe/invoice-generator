@@ -138,7 +138,6 @@ func Action(c *cli.Context) error {
 			}
 		}
 
-		fmt.Println(week, thisDay.Format("02 Jan 2006"), hours)
 		totalHours += hours
 	}
 
