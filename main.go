@@ -237,13 +237,20 @@ func OrdinalDate(date time.Time) string {
 
 func FormatDescription(line string) template.HTML {
 	pattern := regexp.MustCompile(`(\d+)(st|nd|rd|th)`)
-
 	if pattern.MatchString(line) {
 		matches := pattern.FindAllStringSubmatch(line, -1)
 		for _, match := range matches {
 			number := match[1]
 			suffix := match[2]
-			line = strings.Replace(line, match[0], fmt.Sprintf(`%s<span class="ordinal">%s</span>`, number, suffix), -1)
+			line = strings.ReplaceAll(line, match[0], fmt.Sprintf(`%s<span class="ordinal">%s</span>`, number, suffix))
+		}
+	}
+
+	pattern = regexp.MustCompile(`@ US\$ (\d+\.\d+) per day`)
+	if pattern.MatchString(line) {
+		matches := pattern.FindAllStringSubmatch(line, -1)
+		for _, match := range matches {
+			line = strings.ReplaceAll(line, match[0], fmt.Sprintf(`<span class="text-[0.75rem] font-light">%s</span>`, match[0]))
 		}
 	}
 
