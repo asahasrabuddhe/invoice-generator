@@ -30,7 +30,7 @@ func Parse(r io.Reader, invoice *invoiceGenerator.Invoice) error {
 
 	var invoiceMonth, date time.Time
 	//var timesheet []float64
-	var currentWeek, line int
+	var prevWeek, currentWeek, line int
 	var totalHours, totalAmount float64
 	for i, row := range rows {
 		if i == 0 {
@@ -82,11 +82,11 @@ func Parse(r io.Reader, invoice *invoiceGenerator.Invoice) error {
 			}
 
 			_, week := date.ISOWeek()
-
 			if currentWeek != week {
+				prevWeek = currentWeek
 				currentWeek = week
 				if totalHours != 0 {
-					invoice.Lines[line] = CreateLine(date, totalHours, invoice)
+					invoice.Lines[line] = CreateLine(date, totalHours, invoice, prevWeek)
 					totalAmount += invoice.Lines[line].Amount
 					totalHours = 0
 					line++
@@ -97,10 +97,16 @@ func Parse(r io.Reader, invoice *invoiceGenerator.Invoice) error {
 		}
 	}
 
-	invoice.Lines[line] = CreateLine(date, totalHours, invoice)
-	totalAmount += invoice.Lines[line].Amount
-	totalHours = 0
-	line++
+	_, week := date.ISOWeek()
+
+	prevWeek = currentWeek
+	currentWeek = week
+	if totalHours != 0 {
+		invoice.Lines[line] = CreateLine(date, totalHours, invoice, prevWeek)
+		totalAmount += invoice.Lines[line].Amount
+		totalHours = 0
+		line++
+	}
 
 	invoice.Total = totalAmount
 
@@ -159,15 +165,21 @@ func OrdinalDate(date time.Time) string {
 	return fmt.Sprintf("%s %s %d", day, month, year)
 }
 
-func GetStartOfWeek(t time.Time) time.Time {
-	o := t
-	for o.Weekday() != time.Monday {
-		o = o.AddDate(0, 0, -1)
-		if o.Month() != t.Month() {
-			return o.AddDate(0, 0, 1)
-		}
+func GetStartOfWeek(year, week int) time.Time {
+	t := time.Date(year, 7, 1, 0, 0, 0, 0, time.UTC)
+
+	// Roll back to Monday:
+	if wd := t.Weekday(); wd == time.Sunday {
+		t = t.AddDate(0, 0, -6)
+	} else {
+		t = t.AddDate(0, 0, -int(wd)+1)
 	}
-	return o
+
+	// Difference in weeks:
+	_, w := t.ISOWeek()
+	t = t.AddDate(0, 0, (week-w)*7)
+
+	return t
 }
 
 func GetEndOfWeek(t time.Time) time.Time {
@@ -181,8 +193,8 @@ func GetEndOfWeek(t time.Time) time.Time {
 	return o
 }
 
-func CreateLine(thisDay time.Time, totalHours float64, invoice *invoiceGenerator.Invoice) invoiceGenerator.Line {
-	start := GetStartOfWeek(thisDay.AddDate(0, 0, -1))
+func CreateLine(thisDay time.Time, totalHours float64, invoice *invoiceGenerator.Invoice, prevWeek int) invoiceGenerator.Line {
+	start := GetStartOfWeek(thisDay.Year(), prevWeek)
 	end := GetEndOfWeek(start)
 	daysWorked := totalHours / 8
 	daysWorked = math.Round(daysWorked*100) / 100
