@@ -1,12 +1,8 @@
-package main
+package timesheet
 
 import (
-	"html/template"
-	"reflect"
 	"testing"
 	"time"
-
-	tpl "invoiceGenerator/template"
 )
 
 func TestOrdinal(t *testing.T) {
@@ -288,65 +284,6 @@ func TestOrdinalDate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := OrdinalDate(tt.args.date); got != tt.want {
 				t.Errorf("OrdinalDate() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFormatDescription(t *testing.T) {
-	type args struct {
-		line string
-	}
-	tests := []struct {
-		name string
-		args args
-		want template.HTML
-	}{
-		{
-			name: "1",
-			args: args{
-				//line: "5 days of work done in between 16th September 2019 and "
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tpl.FormatDescription(tt.args.line); got != tt.want {
-				t.Errorf("FormatDescription() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetStartOfWeek(t *testing.T) {
-	loc, _ := time.LoadLocation("Asia/Kolkata")
-	type args struct {
-		t time.Time
-	}
-	tests := []struct {
-		name string
-		args args
-		want time.Time
-	}{
-		{
-			name: "1",
-			args: args{
-				t: time.Date(2023, time.April, 30, 0, 0, 0, 0, loc),
-			},
-			want: time.Date(2023, time.April, 24, 0, 0, 0, 0, loc),
-		},
-		{
-			name: "2",
-			args: args{
-				t: time.Date(2023, time.April, 1, 0, 0, 0, 0, loc),
-			},
-			want: time.Date(2023, time.April, 1, 0, 0, 0, 0, loc),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetStartOfWeek(tt.args.t); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetStartOfWeek() = %v, want %v", got, tt.want)
 			}
 		})
 	}
