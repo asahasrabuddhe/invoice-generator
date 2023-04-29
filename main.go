@@ -78,12 +78,12 @@ func Action(c *cli.Context) error {
 	var timesheet []float64
 	for i, row := range rows {
 		if i == 0 {
-			t, err = time.Parse("Jan 2006", strings.Split(row[0], " :")[0])
+			t, err = time.ParseInLocation("Jan 2006", strings.Split(row[0], " :")[0], time.Local)
 			if err != nil {
 				return err
 			}
 
-			invoice.Start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+			invoice.Start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.Local)
 			invoice.End = invoice.Start.AddDate(0, 1, -1)
 
 			timesheet = make([]float64, invoice.End.Day())
@@ -119,27 +119,18 @@ func Action(c *cli.Context) error {
 
 	_, currentWeek := t.ISOWeek()
 	var totalHours, totalAmount float64
-	var start, end, thisDay time.Time
+	var thisDay time.Time
 	var daysWorked, line int
 
 	for day, hours := range timesheet {
-		thisDay = t.AddDate(0, 0, day)
+		thisDay = time.Date(t.Year(), t.Month(), day+1, 0, 0, 0, 0, time.Local)
 		_, week := thisDay.ISOWeek()
+
 		if currentWeek != week {
 			currentWeek = week
 
-			start = thisDay.AddDate(0, 0, -(7 - int(thisDay.Weekday())))
-			for start.Month() != thisDay.Month() {
-				start = start.AddDate(0, 0, 1)
-			}
-			end = start.AddDate(0, 0, 7-int(start.Weekday()))
-
 			if totalHours != 0 {
-				//fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
-				invoice.Lines[line] = Line{
-					Description: fmt.Sprintf("%d days of work done in between %s and %s\n@ US$ %.2f per day", daysWorked, OrdinalDate(start), OrdinalDate(end), invoice.Rate),
-					Amount:      (totalHours / 8) * invoice.Rate,
-				}
+				invoice.Lines[line] = CreateLine(thisDay, daysWorked, totalHours, invoice)
 				totalHours = 0
 				daysWorked = 0
 				totalAmount += invoice.Lines[line].Amount
@@ -155,17 +146,7 @@ func Action(c *cli.Context) error {
 
 	}
 
-	//start := thisDay.AddDate(0, 0, -(7 - int(thisDay.Weekday())))
-	//for start.Month() != thisDay.Month() {
-	//	start = start.AddDate(0, 0, 1)
-	//}
-	//end := start.AddDate(0, 0, 7-int(start.Weekday()))
-
-	//fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
-	invoice.Lines[line] = Line{
-		Description: fmt.Sprintf("%d days of work done in between %s and %s\n@ US$ %.2f per day", daysWorked, OrdinalDate(start), OrdinalDate(end), invoice.Rate),
-		Amount:      (totalHours / 8) * invoice.Rate,
-	}
+	invoice.Lines[line] = CreateLine(thisDay, daysWorked, totalHours, invoice)
 	totalHours = 0
 	totalAmount += invoice.Lines[line].Amount
 
@@ -284,4 +265,51 @@ func GetFileName(invoice *Invoice) string {
 	extension := ".pdf"
 
 	return fmt.Sprintf("%s - %s %d%s", invoice.Number, invoice.Start.Month().String(), invoice.Start.Year(), extension)
+}
+
+func GetStartOfWeek(t time.Time) time.Time {
+	o := t
+	for o.Weekday() != time.Monday {
+		o = o.AddDate(0, 0, -1)
+		if o.Month() != t.Month() {
+			return o.AddDate(0, 0, 1)
+		}
+	}
+	return o
+}
+
+func GetEndOfWeek(t time.Time) time.Time {
+	o := t
+	for o.Weekday() != time.Sunday {
+		o = o.AddDate(0, 0, 1)
+		if o.Month() != t.Month() {
+			return o.AddDate(0, 0, -1)
+		}
+	}
+	return o
+}
+
+func CreateLine(thisDay time.Time, daysWorked int, totalHours float64, invoice *Invoice) Line {
+	start := GetStartOfWeek(thisDay.AddDate(0, 0, -1))
+	end := GetEndOfWeek(start)
+
+	var description string
+	if !start.Equal(end) {
+		description = fmt.Sprintf(
+			"%d days of work done in between %s and %s\n@ US$ %.2f per day",
+			daysWorked, OrdinalDate(start), OrdinalDate(end), invoice.Rate,
+		)
+	} else {
+		description = fmt.Sprintf(
+			"%d day of work done in on %s\n@ US$ %.2f per day",
+			daysWorked, OrdinalDate(start), invoice.Rate,
+		)
+	}
+
+	amount := (totalHours / 8) * invoice.Rate
+
+	return Line{
+		Description: description,
+		Amount:      amount,
+	}
 }

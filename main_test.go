@@ -2,6 +2,7 @@ package main
 
 import (
 	"html/template"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -310,6 +311,40 @@ func TestFormatDescription(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := FormatDescription(tt.args.line); got != tt.want {
 				t.Errorf("FormatDescription() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetStartOfWeek(t *testing.T) {
+	loc, _ := time.LoadLocation("Asia/Kolkata")
+	type args struct {
+		t time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{
+			name: "1",
+			args: args{
+				t: time.Date(2023, time.April, 30, 0, 0, 0, 0, loc),
+			},
+			want: time.Date(2023, time.April, 24, 0, 0, 0, 0, loc),
+		},
+		{
+			name: "2",
+			args: args{
+				t: time.Date(2023, time.April, 1, 0, 0, 0, 0, loc),
+			},
+			want: time.Date(2023, time.April, 1, 0, 0, 0, 0, loc),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetStartOfWeek(tt.args.t); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetStartOfWeek() = %v, want %v", got, tt.want)
 			}
 		})
 	}
