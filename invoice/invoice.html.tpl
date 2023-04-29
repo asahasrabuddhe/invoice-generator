@@ -38,7 +38,7 @@
             size: 210mm 298mm !important;
         }
     </style>
-    <title>Invoice - {{ .InvoiceNumber }} | {{ .InvoiceDate }}</title>
+    <title>Invoice - {{ .Number }} | {{ .Date }}</title>
 </head>
 <body>
 <section class="white">
@@ -49,9 +49,9 @@
                     <div class="grid grid-flow-col">
                         <!-- name and email -->
                         <div class="space-y-2 text-slate-700">
-                            <p class="font-body font-light">{{ .FromEmail }}</p>
+                            <p class="font-body font-light">{{ .From.Email }}</p>
                             <p class="text-xl font-extrabold tracking-tight uppercase font-body">
-                                {{ .FromName }}
+                                {{ .From.Name }}
                             </p>
                         </div>
                         <!-- invoice -->
@@ -66,24 +66,24 @@
                     <div class="grid grid-flow-col">
                         <!-- address -->
                         <div class="text-slate-700 font-light">
-                            <p class="font-body">{{ .FromAddress.Line1 }}</p>
-                            <p class="font-body">{{ .FromAddress.Line2 }}</p>
-                            <p class="font-body">{{ .FromAddress.Line3 }}</p>
+                            {{ range .From.AddressLines }}
+                            <p class="font-body">{{ . }}</p>
+                            {{ end }}
                         </div>
                         <!-- invoice number and date -->
                         <div class="text-slate-700 font-light">
-                            <p class="font-body text-right"><span class="font-bold">INVOICE #</span> {{ .InvoiceNumber
-                                }}</p>
-                            <p class="font-body text-right"><span class="font-bold">{{ .InvoiceDate }}</span></p>
+                            <p class="font-body text-right"><span class="font-bold">INVOICE #</span> {{ .Number }}</p>
+                            <p class="font-body text-right"><span class="font-bold">{{ .Date }}</span></p>
                         </div>
                     </div>
                 </div>
                 <div class="px-8 py-2">
                     <!-- contact info: phone and email -->
                     <div class="text-slate-700 font-light">
-                        <p class="font-body">{{ .FromPhone1 }}</p>
-                        <p class="font-body">{{ .FromPhone2 }}</p>
-                        <p class="font-body py-2">{{ .FromEmail }}</p>
+                        {{ range .From.Phone }}
+                        <p class="font-body">{{ . }}</p>
+                        {{ end }}
+                        <p class="font-body py-2">{{ .From.Email }}</p>
                     </div>
                 </div>
                 <div class="px-8 py-2">
@@ -92,10 +92,10 @@
                 <div class="px-8 py-2">
                     <!-- contact info: phone and email -->
                     <div class="text-slate-700 font-light">
-                        <p class="font-body py-2">{{ .ToName }}</p>
-                        <p class="font-body">{{ .ToAddress.Line1 }}</p>
-                        <p class="font-body">{{ .ToAddress.Line2 }}</p>
-                        <p class="font-body">{{ .ToAddress.Line3 }}</p>
+                        <p class="font-body py-2">{{ .To.Name }}</p>
+                        {{ range .To.AddressLines }}
+                        <p class="font-body">{{ . }}</p>
+                        {{ end }}
                     </div>
                 </div>
                 <div class="px-8 py-2">
@@ -118,7 +118,19 @@
                             {{ range .Lines }}
                             <tr class="border-b border-slate-200">
                                 <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
-                                    <p class="text-sm text-left font-medium text-slate-700">{{ formatDescription .Description}}</p>
+                                    <p class="text-sm text-left font-medium text-slate-700">{{ formatDescription
+                                        .Description}}</p>
+                                </td>
+                                <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
+                                    <p class="text-sm text-right text-slate-500">{{ formatAmount .Amount }}</p>
+                                </td>
+                            </tr>
+                            {{ end }}
+                            {{ range .ExtraLines }}
+                            <tr class="border-b border-slate-200">
+                                <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
+                                    <p class="text-sm text-left font-medium text-slate-700">{{ formatDescription
+                                        .Description}}</p>
                                 </td>
                                 <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
                                     <p class="text-sm text-right text-slate-500">{{ formatAmount .Amount }}</p>

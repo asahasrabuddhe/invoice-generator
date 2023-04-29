@@ -3,64 +3,23 @@ package main
 import (
 	"bytes"
 	"embed"
-	"encoding/json"
 	"fmt"
+	"github.com/xuri/excelize/v2"
 	"html/template"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
 	"github.com/urfave/cli/v2"
 )
 
 //go:embed invoice
 var fs embed.FS
-
-const WorkingDaysPerWeek = 5
-
-type Invoice struct {
-	InvoiceNumber int
-	InvoiceDate   string
-	FromEmail     string
-	FromName      string
-	FromPhone1    string
-	FromPhone2    string
-	FromAddress   Address
-	ToName        string
-	ToAddress     Address
-	Lines         []Line
-	Total         float64
-}
-
-type Line struct {
-	Description string
-	Amount      float64
-}
-
-type Config struct {
-	StartDate     time.Time `json:"startDate"`
-	EndDate       time.Time `json:"endDate"`
-	InvoiceNumber int       `json:"invoiceNumber"`
-	Rate          float64   `json:"rate"`
-	FromEmail     string    `json:"fromEmail"`
-	FromName      string    `json:"fromName"`
-	FromPhone1    string    `json:"fromPhone1"`
-	FromPhone2    string    `json:"fromPhone2"`
-	FromAddress   Address   `json:"fromAddress"`
-	ToName        string    `json:"toName"`
-	ToAddress     Address   `json:"toAddress"`
-	ExtraLines    []Line    `json:"extraLines"`
-}
-
-type Address struct {
-	Line1 string `json:"line1"`
-	Line2 string `json:"line2"`
-	Line3 string `json:"line3"`
-}
 
 func main() {
 	app := cli.NewApp()
@@ -69,14 +28,6 @@ func main() {
 		{
 			Name:  "Ajitem Sahasrabuddhe",
 			Email: "ajitem@engineering.com",
-		},
-	}
-
-	app.Commands = []*cli.Command{
-		{
-			Name:   "parse-time-sheet",
-			Usage:  "parse time sheet",
-			Action: ParseAction,
 		},
 	}
 
@@ -100,26 +51,135 @@ func Action(c *cli.Context) error {
 
 	outFilePath := filepath.Dir(configFilePath)
 
-	config := Config{}
-
 	configFile, err := os.Open(configFilePath)
 	if err != nil {
 		return err
 	}
 
-	err = json.NewDecoder(configFile).Decode(&config)
+	invoice, err := NewInvoice(configFile)
 	if err != nil {
 		return err
 	}
 
-	invoice := GetInvoice(config)
+	file, err := excelize.OpenFile("/Users/ajitem/Downloads/Apr_2023_Completed_Work_1682709355.xlsx")
+	if err != nil {
+		return err
+	}
+
+	activeSheet := file.GetActiveSheetIndex()
+	activeSheetName := file.GetSheetName(activeSheet)
+
+	rows, err := file.GetRows(activeSheetName)
+	if err != nil {
+		return err
+	}
+
+	var t, date time.Time
+	var timesheet []float64
+	for i, row := range rows {
+		if i == 0 {
+			t, err = time.Parse("Jan 2006", strings.Split(row[0], " :")[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			invoice.Start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+			invoice.End = invoice.Start.AddDate(0, 1, -1)
+
+			timesheet = make([]float64, invoice.End.Day())
+
+			_, lastWeek := invoice.End.ISOWeek()
+			_, firstWeek := invoice.Start.ISOWeek()
+
+			invoice.Lines = make([]Line, lastWeek-firstWeek)
+
+			continue
+		}
+		switch len(row) {
+		case 1:
+			date, err = time.Parse("Mon Jan 02", row[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			date = date.AddDate(t.Year(), 0, 0)
+		case 3:
+			var val string
+			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("C%d", i+1))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			timesheet[date.Day()-1], err = strconv.ParseFloat(val, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	_, currentWeek := t.ISOWeek()
+	var totalHours, totalAmount float64
+	var thisDay time.Time
+	var daysWorked, line int
+
+	for day, hours := range timesheet {
+		thisDay = t.AddDate(0, 0, day)
+		_, week := thisDay.ISOWeek()
+		if currentWeek != week {
+			currentWeek = week
+
+			start := thisDay.AddDate(0, 0, -(7 - int(thisDay.Weekday())))
+			for start.Month() != thisDay.Month() {
+				start = start.AddDate(0, 0, 1)
+			}
+			end := start.AddDate(0, 0, 7-int(start.Weekday()))
+
+			if totalHours != 0 {
+				//fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
+				invoice.Lines[line] = Line{
+					Description: fmt.Sprintf("%d days of work done in between %s and %s @ US$ %.2f per day", daysWorked, start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), invoice.Rate),
+					Amount:      (totalHours / 8) * invoice.Rate,
+				}
+				totalHours = 0
+				daysWorked = 0
+				totalAmount += invoice.Lines[line].Amount
+				line++
+			}
+		}
+
+		//fmt.Println(week, thisDay.Format("02 Jan 2006"), hours)
+		totalHours += hours
+		if hours != 0 {
+			daysWorked++
+		}
+
+	}
+
+	end := thisDay.AddDate(0, 0, -1)
+	start := end.AddDate(0, 0, -6)
+	for start.Month() != end.Month() {
+		start = start.AddDate(0, 0, 1)
+	}
+
+	//fmt.Printf("Between %s and %s - Days: %f - Amount - %f\n", start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), totalHours/8, (totalHours/8)*325)
+	invoice.Lines[line] = Line{
+		Description: fmt.Sprintf("%d days of work done in between %s and %s @ US$ %.2f per day", daysWorked, start.Format("02 Jan 2006"), end.Format("02 Jan 2006"), invoice.Rate),
+		Amount:      (totalHours / 8) * invoice.Rate,
+	}
+	totalHours = 0
+	totalAmount += invoice.Lines[line].Amount
+
+	invoice.Total = totalAmount
 
 	var buf bytes.Buffer
 
 	tpl := template.Must(
 		template.
 			New("invoice.html.tpl").
-			Funcs(template.FuncMap{"formatDescription": FormatDescription}).
+			Funcs(template.FuncMap{
+				"formatDescription": FormatDescription,
+				"formatAmount":      FormatAmount,
+			}).
 			ParseFS(fs, "invoice/invoice.html.tpl"),
 	)
 
@@ -128,120 +188,29 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	page := wkhtmltopdf.NewPageReader(&buf)
-	page.EnableLocalFileAccess.Set(true)
-	page.EnableLocalFileAccess.Set(true)
-	page.Zoom.Set(1.0)
-
-	pdfg, err := wkhtmltopdf.NewPDFGenerator()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pdfg.Dpi.Set(600)
-	pdfg.Orientation.Set(wkhtmltopdf.OrientationPortrait)
-	pdfg.PageSize.Set(wkhtmltopdf.PageSizeA4)
-	pdfg.AddPage(page)
-
-	err = pdfg.Create()
+	f, err := os.Create(filepath.Join(outFilePath, GetFileName(invoice)+".html"))
 	if err != nil {
 		return err
 	}
 
-	err = pdfg.WriteFile(filepath.Join(outFilePath, GetFileName(config)))
+	_, _ = f.Write(buf.Bytes())
+	_ = f.Close()
+
+	path := LocateChrome()
+
+	err = exec.
+		CommandContext(
+			c.Context, path, "--headless", "--disable-gpu", "--no-pdf-header-footer",
+			"--print-to-pdf="+filepath.Join(outFilePath, GetFileName(invoice)),
+			filepath.Join(outFilePath, GetFileName(invoice)+".html"),
+		).Run()
 	if err != nil {
 		return err
 	}
+
+	//_ = os.Remove(f.Name())
 
 	return nil
-}
-
-func GetInvoice(config Config) Invoice {
-	//var workingDaysCount, workingWeeksCount int
-	//for date := config.StartDate; date.Unix() <= config.EndDate.Unix(); date = date.Add(24 * time.Hour) {
-	//	if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
-	//		workingDaysCount++
-	//	}
-	//	if date.Weekday() == time.Friday {
-	//		workingWeeksCount++
-	//	}
-	//}
-	//
-	//if config.EndDate.Weekday() != time.Friday {
-	//	workingWeeksCount++
-	//}
-	//
-	//var lengthOfFirstWeek, lengthOfLastWeek int
-	//
-	//for date := config.StartDate; date.Weekday() != time.Saturday; date = date.Add(24 * time.Hour) {
-	//	lengthOfFirstWeek++
-	//}
-	//
-	//for date := config.EndDate; date.Weekday() != time.Sunday; date = date.Add(-24 * time.Hour) {
-	//	lengthOfLastWeek++
-	//}
-	//
-	//workingDays := make([][]time.Time, workingWeeksCount)
-	//
-	//for i := 0; i < workingWeeksCount; i++ {
-	//	if i == 0 {
-	//		workingDays[i] = make([]time.Time, lengthOfFirstWeek)
-	//	} else if i == workingWeeksCount-1 {
-	//		workingDays[i] = make([]time.Time, lengthOfLastWeek)
-	//	} else {
-	//		workingDays[i] = make([]time.Time, WorkingDaysPerWeek)
-	//	}
-	//}
-	//
-	//var count int
-	//for i := 0; i < len(workingDays); i++ {
-	//	for j := 0; j < len(workingDays[i]); j++ {
-	//		if config.StartDate.Add(time.Duration(count)*24*time.Hour).Weekday() == time.Saturday {
-	//			count += 2
-	//		}
-	//		workingDays[i][j] = config.StartDate.Add(time.Duration(count) * 24 * time.Hour)
-	//		count++
-	//	}
-	//}
-
-	var invoice Invoice
-
-	//invoice.Lines = make([]Line, 10)
-
-	//var total int
-	//for i := 0; i < len(workingDays); i++ {
-	//	start := workingDays[i][0]
-	//	end := workingDays[i][len(workingDays[i])-1]
-	//
-	//	unit := "days"
-	//	days := int(end.Sub(start).Hours()/24) + 1
-	//	if days == 1 {
-	//		unit = "day"
-	//	}
-	//
-	//	value := config.Rate * days
-	//	total += value
-	//
-	//	if start == end {
-	//		invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in on %s @ US%d per day", days, unit, OrdinalDate(start), config.Rate)
-	//	} else {
-	//		invoice.Lines[i].Description = fmt.Sprintf("%d %s of work done in between %s and %s @ US%d per day", days, unit, OrdinalDate(start), OrdinalDate(end), config.Rate)
-	//	}
-	//	invoice.Lines[i].Amount = value
-	//}
-
-	//invoice.Total = total
-	invoice.InvoiceDate = config.StartDate.Format("02-01-2006")
-	invoice.InvoiceNumber = config.InvoiceNumber
-	invoice.FromEmail = config.FromEmail
-	invoice.FromName = config.FromName
-	invoice.FromPhone1 = config.FromPhone1
-	invoice.FromPhone2 = config.FromPhone2
-	invoice.FromAddress = config.FromAddress
-	invoice.ToName = config.ToName
-	invoice.ToAddress = config.ToAddress
-
-	return invoice
 }
 
 func Ordinal(x int) string {
@@ -299,8 +268,8 @@ func FormatAmount(amount float64) string {
 	return fmt.Sprintf(`USD %.2f`, amount)
 }
 
-func GetFileName(config Config) string {
+func GetFileName(invoice *Invoice) string {
 	extension := ".pdf"
 
-	return fmt.Sprintf("%d - %s %d%s", config.InvoiceNumber, config.StartDate.Month().String(), config.StartDate.Year(), extension)
+	return fmt.Sprintf("%s - %s %d%s", invoice.Number, invoice.Start.Month().String(), invoice.Start.Year(), extension)
 }
