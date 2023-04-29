@@ -92,7 +92,7 @@ func Action(c *cli.Context) error {
 			_, lastWeek := invoice.End.ISOWeek()
 			_, firstWeek := invoice.Start.ISOWeek()
 
-			invoice.Lines = make([]Line, lastWeek-firstWeek)
+			invoice.Lines = make([]Line, lastWeek-firstWeek+len(invoice.ExtraLines))
 
 			continue
 		}
@@ -146,6 +146,15 @@ func Action(c *cli.Context) error {
 	totalAmount += invoice.Lines[line].Amount
 
 	invoice.Total = totalAmount
+
+	for i, extraLine := range invoice.ExtraLines {
+		invoice.Lines[line+i+1] = Line{
+			Description: extraLine.Description,
+			Amount:      extraLine.Amount,
+		}
+
+		invoice.Total += extraLine.Amount
+	}
 
 	var buf bytes.Buffer
 
