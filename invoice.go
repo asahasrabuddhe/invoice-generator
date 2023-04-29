@@ -27,6 +27,7 @@ type Contact struct {
 }
 
 type Line struct {
+	StartDate   time.Time
 	Description string  `json:"description"`
 	Amount      float64 `json:"amount"`
 }
