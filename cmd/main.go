@@ -55,8 +55,6 @@ func main() {
 	}
 }
 
-//-t "/Users/ajitem/Downloads/Apr_2023_Completed_Work_1682709355.xlsx"
-
 func Action(c *cli.Context) error {
 	configFilePath := c.String("config-file")
 	outFilePath := c.String("output-file")
