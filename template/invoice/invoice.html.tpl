@@ -118,17 +118,19 @@
                             </thead>
                             <tbody>
                             {{ range .Lines }}
-                            <tr class="border-b border-slate-200">
-                                <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
-                                    <p class="text-sm text-left font-medium text-slate-700">{{
-                                        formatDescription
-                                        .Description}}</p>
-                                </td>
-                                <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
-                                    <p class="text-sm text-right text-slate-700 font-bold">{{
-                                        formatAmount .Amount }}</p>
-                                </td>
-                            </tr>
+                                {{ if ne .Amount 0.0 }}
+                                <tr class="border-b border-slate-200">
+                                    <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
+                                        <p class="text-sm text-left font-medium text-slate-700">{{
+                                            formatDescription
+                                            .Description}}</p>
+                                    </td>
+                                    <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
+                                        <p class="text-sm text-right text-slate-700 font-bold">{{
+                                            formatAmount .Amount }}</p>
+                                    </td>
+                                </tr>
+                                {{ end }}
                             {{ end }}
                             </tbody>
                             <tfoot>
