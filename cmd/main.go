@@ -25,6 +25,8 @@ func main() {
 		},
 	}
 
+	app.Usage = "igen gnereates invoices from monday.com timesheets"
+
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:    "config-file",
