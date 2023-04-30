@@ -17,6 +17,8 @@ func Get() (*template.Template, error) {
 		Funcs(template.FuncMap{
 			"formatDescription": FormatDescription,
 			"formatAmount":      FormatAmount,
+			"calculateTax":      CalculateTax,
+			"add":               Add,
 		}).
 		ParseFS(fs, "invoice/invoice.html.tpl")
 }
@@ -47,4 +49,12 @@ func FormatDescription(line string) template.HTML {
 
 func FormatAmount(amount float64) string {
 	return fmt.Sprintf(`US$ %.2f`, amount)
+}
+
+func CalculateTax(amount, rate float64) float64 {
+	return amount * rate / 100
+}
+
+func Add(a, b float64) float64 {
+	return a + b
 }

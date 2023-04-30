@@ -13,6 +13,7 @@ type Invoice struct {
 	To         Contact   `json:"to"`
 	Lines      []Line    `json:"-"`
 	ExtraLines []Line    `json:"extraLines"`
+	Tax        Tax       `json:"tax"`
 	Total      float64   `json:"-"`
 	Date       string    `json:"invoiceDate"`
 	Start      time.Time `json:"-"`
@@ -30,6 +31,12 @@ type Line struct {
 	StartDate   time.Time
 	Description string  `json:"description"`
 	Amount      float64 `json:"amount"`
+}
+
+type Tax struct {
+	Type          string  `json:"type"`
+	AccountNumber string  `json:"accountNumber"`
+	Rate          float64 `json:"rate"`
 }
 
 func NewInvoice(r io.Reader) (*Invoice, error) {
