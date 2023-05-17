@@ -1,4 +1,4 @@
-package timesheet
+package invoice
 
 import (
 	"testing"
