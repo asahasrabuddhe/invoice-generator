@@ -11,7 +11,7 @@ Check for the latest version on the [releases page](https://github.com/asahasrab
 1. Create a working directory on your computer and move the downloaded binary from the previous step to this directory.
 2. Create a configuration file, config.json, in the working directory. See [sample configuration file](#sample-configuration-file) for reference.
 3. Download your timesheet from monday.com and save it in the working directory and rename it to timesheet.xlsx.
-4. Run the following command to generate the invoice.
+4. Run the following command in the terminal / command prompt / powershell to generate the invoice.
     ### Linux / MacOS
     ```bash
     ./igen -c config.json -t timesheet.xlsx
