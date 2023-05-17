@@ -29,7 +29,7 @@ func Parse(r io.Reader, in *Invoice) error {
 		return err
 	}
 
-	var month *InvoiceMonth
+	var month *Month
 	var day time.Time
 
 	timesheet := make(map[int64]float64)
@@ -185,34 +185,34 @@ func CreateLine(week *Week, totalHours float64, in *Invoice) Line {
 	}
 }
 
-type InvoiceMonth struct {
+type Month struct {
 	t time.Time
 }
 
-func NewInvoiceMonth(month string) (*InvoiceMonth, error) {
+func NewInvoiceMonth(month string) (*Month, error) {
 	t, err := time.ParseInLocation("Jan 2006", month, time.Local)
 	if err != nil {
 		return nil, err
 	}
 
-	return &InvoiceMonth{t: t}, nil
+	return &Month{t: t}, nil
 }
 
-func (m InvoiceMonth) Year() int {
+func (m Month) Year() int {
 	return m.t.Year()
 }
 
-func (m InvoiceMonth) FirstDay() time.Time {
+func (m Month) FirstDay() time.Time {
 	fd := time.Date(m.t.Year(), m.t.Month(), 1, 0, 0, 0, 0, time.Local)
 	return fd
 }
 
-func (m InvoiceMonth) LastDay() time.Time {
+func (m Month) LastDay() time.Time {
 	ld := m.FirstDay().AddDate(0, 1, -1)
 	return ld
 }
 
-func (m InvoiceMonth) GetWeeks() []*Week {
+func (m Month) GetWeeks() []*Week {
 	fd := m.FirstDay()
 	ld := m.LastDay()
 
