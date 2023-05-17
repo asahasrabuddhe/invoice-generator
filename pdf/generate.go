@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"invoiceGenerator/internal/chrome"
+	"invoiceGenerator/chrome"
 	"invoiceGenerator/template"
 )
 

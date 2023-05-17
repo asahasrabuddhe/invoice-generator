@@ -99,6 +99,7 @@ func Parse(r io.Reader, in *Invoice) error {
 
 		in.Lines[line] = CreateLine(week, totalHours, in)
 		in.Total += in.Lines[line].Amount
+		in.TotalHours += totalHours
 		totalHours = 0
 		line++
 	}

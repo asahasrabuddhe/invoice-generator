@@ -8,7 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"invoiceGenerator/internal/pdf"
+	"invoiceGenerator/pdf"
 )
 
 func Action(c *cli.Context) error {

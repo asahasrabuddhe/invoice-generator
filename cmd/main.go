@@ -6,8 +6,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"invoiceGenerator/internal/invoice"
-	"invoiceGenerator/internal/summary"
+	"invoiceGenerator/invoice"
+	"invoiceGenerator/summary"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"invoiceGenerator/internal/pdf"
+	"invoiceGenerator/pdf"
 )
 
 func Action(c *cli.Context) error {
@@ -23,6 +23,8 @@ func Action(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	invoice.Layout = c.String("layout")
 
 	timesheetFile, err := os.Open(c.String("timesheet-path"))
 	if err != nil {
