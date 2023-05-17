@@ -27,6 +27,23 @@ func main() {
 
 	app.Usage = "igen gnereates invoices from monday.com timesheets"
 
+	app.Commands = []*cli.Command{
+		{
+			Name:    "summary-statement",
+			Aliases: []string{"ss"},
+			Usage:   "generate summary statement",
+			Action:  SummarySheetAction,
+			Hidden:  true,
+			Flags: []cli.Flag{
+				&cli.StringSliceFlag{
+					Name:    "invoice",
+					Aliases: []string{"i"},
+					Usage:   "path to the invoice file",
+				},
+			},
+		},
+	}
+
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:    "config-file",
@@ -86,7 +103,7 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	tpl, err := template.Get()
+	tpl, err := template.Get("invoice.html.tpl")
 	if err != nil {
 		return err
 	}

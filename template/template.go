@@ -11,16 +11,16 @@ import (
 //go:embed invoice
 var fs embed.FS
 
-func Get() (*template.Template, error) {
+func Get(name string) (*template.Template, error) {
 	return template.
-		New("invoice.html.tpl").
+		New(name).
 		Funcs(template.FuncMap{
 			"formatDescription": FormatDescription,
 			"formatAmount":      FormatAmount,
 			"calculateTax":      CalculateTax,
 			"add":               Add,
 		}).
-		ParseFS(fs, "invoice/invoice.html.tpl")
+		ParseFS(fs, "invoice/"+name)
 }
 
 func FormatDescription(line string) template.HTML {
@@ -48,7 +48,11 @@ func FormatDescription(line string) template.HTML {
 }
 
 func FormatAmount(amount float64) string {
-	return fmt.Sprintf(`US$ %.2f`, amount)
+	amt := fmt.Sprintf(`%.2f`, amount)
+	for i := len(amt); i < 8; i++ {
+		amt = " " + amt
+	}
+	return `US$ ` + amt
 }
 
 func CalculateTax(amount, rate float64) float64 {
