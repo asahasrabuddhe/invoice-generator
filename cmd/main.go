@@ -52,6 +52,11 @@ func main() {
 			Usage:    "path to the timesheet file",
 			Required: true,
 		},
+		&cli.StringFlag{
+			Name:    "layout",
+			Aliases: []string{"layout"},
+			Usage:   "configures the layout of the generated invoice. possible values: [weekly, monthly]",
+			Value:   "monthly",
 		},
 		&cli.StringFlag{
 			Name:    "output-file",
