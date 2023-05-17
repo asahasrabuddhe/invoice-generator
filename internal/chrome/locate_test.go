@@ -6,7 +6,7 @@ import (
 )
 
 func TestLocate(t *testing.T) {
-	if exe := ChromeExecutable(); exe == "" {
+	if exe := Executable(); exe == "" {
 		t.Fatal()
 	} else {
 		t.Log(exe)

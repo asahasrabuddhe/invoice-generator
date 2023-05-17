@@ -1,7 +1,8 @@
-package invoiceGenerator
+package invoice
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 )
@@ -18,6 +19,10 @@ type Invoice struct {
 	Date       string    `json:"invoiceDate"`
 	Start      time.Time `json:"-"`
 	End        time.Time `json:"-"`
+}
+
+func (i Invoice) FileName() string {
+	return fmt.Sprintf("%s - %s %d.pdf", i.Number, i.Start.Month().String(), i.Start.Year())
 }
 
 type Contact struct {

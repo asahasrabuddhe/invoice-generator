@@ -7,21 +7,12 @@ import (
 	"strings"
 )
 
-// ChromeExecutable returns a string which points to the preferred Chrome
-// executable file.
-var ChromeExecutable = Locate
+// Executable returns a string which points to the preferred Chrome executable file.
+var Executable = Locate
 
 // Locate returns a path to the Chrome binary, or an empty string if
 // Chrome installation is not found.
 func Locate() string {
-
-	// If env variable "LORCACHROME" specified and it exists
-	if path, ok := os.LookupEnv("LORCACHROME"); ok {
-		if _, err := os.Stat(path); err == nil {
-			return path
-		}
-	}
-
 	var paths []string
 	switch runtime.GOOS {
 	case "darwin":
