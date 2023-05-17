@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -8,6 +9,12 @@ import (
 
 	"invoiceGenerator/invoice"
 	"invoiceGenerator/summary"
+)
+
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 func main() {
@@ -64,6 +71,8 @@ func main() {
 	}
 
 	app.Action = invoice.Action
+
+	app.Version = fmt.Sprintf("%s, commit %s, built at %s", version, commit, date)
 
 	err := app.Run(os.Args)
 	if err != nil {
