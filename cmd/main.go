@@ -123,13 +123,6 @@ func GetFileName(invoice *invoiceGenerator.Invoice) string {
 	return fmt.Sprintf("%s - %s %d%s", invoice.Number, invoice.Start.Month().String(), invoice.Start.Year(), extension)
 }
 
-func init() {
-	err := license.SetMeteredKey(os.Getenv("UNIDOC_LICENSE_KEY"))
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
-
 type SummarySheet struct {
 	Month string        `json:"month"`
 	Lines []SummaryLine `json:"lines"`
@@ -143,6 +136,11 @@ type SummaryLine struct {
 }
 
 func SummarySheetAction(c *cli.Context) error {
+	err := license.SetMeteredKey(os.Getenv("UNIDOC_LICENSE_KEY"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	invoices := c.StringSlice("invoice")
 
 	sheet := SummarySheet{
