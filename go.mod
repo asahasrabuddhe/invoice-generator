@@ -1,6 +1,6 @@
 module invoiceGenerator
 
-go 1.17
+go 1.20
 
 require (
 	github.com/unidoc/unipdf/v3 v3.45.0
