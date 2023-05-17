@@ -41,20 +41,18 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:     "config-file",
-			Aliases:  []string{"c"},
-			Usage:    "path to the configuration file",
-			Required: true,
+			Name:    "config-file",
+			Aliases: []string{"c"},
+			Usage:   "path to the configuration file",
 		},
 		&cli.StringFlag{
-			Name:     "timesheet-path",
-			Aliases:  []string{"t"},
-			Usage:    "path to the timesheet file",
-			Required: true,
+			Name:    "timesheet-path",
+			Aliases: []string{"t"},
+			Usage:   "path to the timesheet file",
 		},
 		&cli.StringFlag{
 			Name:    "layout",
-			Aliases: []string{"layout"},
+			Aliases: []string{"l"},
 			Usage:   "configures the layout of the generated invoice. possible values: [weekly, monthly]",
 			Value:   "monthly",
 		},

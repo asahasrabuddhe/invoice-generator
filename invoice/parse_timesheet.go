@@ -84,23 +84,34 @@ func Parse(r io.Reader, in *Invoice) error {
 	var line int
 	var totalHours float64
 
-	weeks := month.GetWeeks()
-	in.Lines = make([]Line, len(weeks)+len(in.ExtraLines))
+	if in.Layout == "weekly" {
+		weeks := month.GetWeeks()
+		in.Lines = make([]Line, len(weeks)+len(in.ExtraLines))
+	} else {
+		in.Lines = make([]Line, 1+len(in.ExtraLines))
+	}
 
 	for _, week := range month.GetWeeks() {
-		days := int(week.End.Sub(week.Start).Hours()) / 24
+		days := int(week.End().Sub(week.Start()).Hours()) / 24
 
 		for i := 0; i <= days; i++ {
-			currentDay := week.Start.AddDate(0, 0, i)
+			currentDay := week.Start().AddDate(0, 0, i)
 			if hours, ok := timesheet[currentDay.Unix()]; ok {
 				totalHours += hours
 			}
 		}
 
-		in.Lines[line] = CreateLine(week, totalHours, in)
-		in.Total += in.Lines[line].Amount
+		if in.Layout == "weekly" {
+			in.Lines[line] = CreateLine(week, totalHours, in)
+			in.Total += in.Lines[line].Amount
+			line++
+		}
 		in.TotalHours += totalHours
 		totalHours = 0
+	}
+	if in.Layout == "monthly" {
+		in.Lines[0] = CreateLine(month, in.TotalHours, in)
+		in.Total = in.Lines[0].Amount
 		line++
 	}
 
@@ -160,34 +171,47 @@ func OrdinalDate(date time.Time) string {
 	return fmt.Sprintf("%s %s %d", day, month, year)
 }
 
-func CreateLine(week *Week, totalHours float64, in *Invoice) Line {
+func CreateLine(week Range, totalHours float64, in *Invoice) Line {
 	daysWorked := totalHours / 8
 	daysWorked = math.Round(daysWorked*100) / 100
 
 	var description string
-	if !week.Start.Equal(week.End) {
+	if !week.Start().Equal(week.End()) {
 		description = fmt.Sprintf(
 			"%.2f days of work done in between %s and %s\n@ US$ %.2f per day",
-			daysWorked, OrdinalDate(week.Start), OrdinalDate(week.End), in.Rate,
+			daysWorked, OrdinalDate(week.Start()), OrdinalDate(week.End()), in.Rate,
 		)
 	} else {
 		description = fmt.Sprintf(
 			"%.2f day of work done in on %s\n@ US$ %.2f per day",
-			daysWorked, OrdinalDate(week.Start), in.Rate,
+			daysWorked, OrdinalDate(week.Start()), in.Rate,
 		)
 	}
 
 	amount := daysWorked * in.Rate
 
 	return Line{
-		StartDate:   week.Start,
+		StartDate:   week.Start(),
 		Description: description,
 		Amount:      amount,
 	}
 }
 
+type Range interface {
+	Start() time.Time
+	End() time.Time
+}
+
 type Month struct {
 	t time.Time
+}
+
+func (m Month) Start() time.Time {
+	return time.Date(m.t.Year(), m.t.Month(), 1, 0, 0, 0, 0, time.Local)
+}
+
+func (m Month) End() time.Time {
+	return m.Start().AddDate(0, 1, -1)
 }
 
 func NewInvoiceMonth(month string) (*Month, error) {
@@ -225,8 +249,8 @@ func (m Month) GetWeeks() []*Week {
 
 	for i := 0; i < weekCount; i++ {
 		w := NewWeek(m.t.Year(), fw+i)
-		for w.Start.Month() != m.t.Month() {
-			w.Start = w.Start.AddDate(0, 0, 1)
+		for w.start.Month() != m.t.Month() {
+			w.start = w.start.AddDate(0, 0, 1)
 		}
 		weeks[i] = w
 	}
@@ -236,9 +260,17 @@ func (m Month) GetWeeks() []*Week {
 
 type Week struct {
 	Number int
-	Start  time.Time
-	End    time.Time
+	start  time.Time
+	end    time.Time
 	Hours  float64
+}
+
+func (w Week) Start() time.Time {
+	return w.start
+}
+
+func (w Week) End() time.Time {
+	return w.end
 }
 
 func NewWeek(year, week int) *Week {
@@ -258,7 +290,7 @@ func NewWeek(year, week int) *Week {
 
 	return &Week{
 		Number: week,
-		Start:  t,
-		End:    t.AddDate(0, 0, 6),
+		start:  t,
+		end:    t.AddDate(0, 0, 6),
 	}
 }
