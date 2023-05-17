@@ -41,14 +41,17 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:    "config-file",
-			Aliases: []string{"c"},
-			Usage:   "path to the configuration file",
+			Name:     "config-file",
+			Aliases:  []string{"c"},
+			Usage:    "path to the configuration file",
+			Required: true,
 		},
 		&cli.StringFlag{
-			Name:    "timesheet-path",
-			Aliases: []string{"t"},
-			Usage:   "path to the timesheet file",
+			Name:     "timesheet-path",
+			Aliases:  []string{"t"},
+			Usage:    "path to the timesheet file",
+			Required: true,
+		},
 		},
 		&cli.StringFlag{
 			Name:    "output-file",
