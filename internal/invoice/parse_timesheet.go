@@ -1,4 +1,4 @@
-package timesheet
+package invoice
 
 import (
 	"fmt"
@@ -10,11 +10,9 @@ import (
 	"time"
 
 	"github.com/xuri/excelize/v2"
-
-	"invoiceGenerator/internal/invoice"
 )
 
-func Parse(r io.Reader, in *invoice.Invoice) error {
+func Parse(r io.Reader, in *Invoice) error {
 	// open file
 	file, err := excelize.OpenReader(r)
 	if err != nil {
@@ -87,7 +85,7 @@ func Parse(r io.Reader, in *invoice.Invoice) error {
 	var totalHours float64
 
 	weeks := month.GetWeeks()
-	in.Lines = make([]invoice.Line, len(weeks)+len(in.ExtraLines))
+	in.Lines = make([]Line, len(weeks)+len(in.ExtraLines))
 
 	for _, week := range month.GetWeeks() {
 		days := int(week.End.Sub(week.Start).Hours()) / 24
@@ -106,7 +104,7 @@ func Parse(r io.Reader, in *invoice.Invoice) error {
 	}
 
 	for i, extraLine := range in.ExtraLines {
-		in.Lines[line+i] = invoice.Line{
+		in.Lines[line+i] = Line{
 			Description: extraLine.Description,
 			Amount:      extraLine.Amount,
 		}
@@ -161,7 +159,7 @@ func OrdinalDate(date time.Time) string {
 	return fmt.Sprintf("%s %s %d", day, month, year)
 }
 
-func CreateLine(week *Week, totalHours float64, in *invoice.Invoice) invoice.Line {
+func CreateLine(week *Week, totalHours float64, in *Invoice) Line {
 	daysWorked := totalHours / 8
 	daysWorked = math.Round(daysWorked*100) / 100
 
@@ -180,7 +178,7 @@ func CreateLine(week *Week, totalHours float64, in *invoice.Invoice) invoice.Lin
 
 	amount := daysWorked * in.Rate
 
-	return invoice.Line{
+	return Line{
 		StartDate:   week.Start,
 		Description: description,
 		Amount:      amount,

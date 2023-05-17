@@ -31,7 +31,11 @@ func Action(c *cli.Context) error {
 			return err
 		}
 
-		sheet.Lines[i] = inv.Line()
+		sheet.Lines[i] = Line{
+			Resource:      inv.Resource(),
+			InvoiceNumber: inv.Number(),
+			Amount:        inv.Amount(),
+		}
 	}
 
 	for _, line := range sheet.Lines {

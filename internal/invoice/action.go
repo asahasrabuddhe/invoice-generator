@@ -6,7 +6,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"invoiceGenerator/internal/pdf"
-	"invoiceGenerator/internal/timesheet"
 )
 
 func Action(c *cli.Context) error {
@@ -30,7 +29,7 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	err = timesheet.Parse(timesheetFile, invoice)
+	err = Parse(timesheetFile, invoice)
 	if err != nil {
 		return err
 	}
