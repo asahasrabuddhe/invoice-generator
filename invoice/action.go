@@ -2,6 +2,7 @@ package invoice
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -36,6 +37,8 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
+	outFilePath := c.String("output-file")
+
 	if lines := c.StringSlice("lines"); len(lines) > 0 {
 		invoice.Layout = "monthly"
 		invoice.Mode = "hourly"
@@ -58,7 +61,7 @@ func Action(c *cli.Context) error {
 				return err
 			}
 
-			month.t, err = time.ParseInLocation("022006", splitLine[2], time.Local)
+			month.t, err = time.ParseInLocation("012006", splitLine[2], time.Local)
 			if err != nil {
 				return err
 			}
@@ -66,6 +69,8 @@ func Action(c *cli.Context) error {
 			invoice.Lines[i] = CreateLine(month, hours, invoice)
 			invoice.Total += invoice.Lines[i].Amount
 		}
+
+		outFilePath = fmt.Sprintf("invoice-pere-0%s.pdf", invoice.Number)
 	} else {
 		var timesheetFile *os.File
 
@@ -98,7 +103,6 @@ func Action(c *cli.Context) error {
 		invoice.Total += extraLine.Amount
 	}
 
-	outFilePath := c.String("output-file")
 	if outFilePath == "" {
 		outFilePath = invoice.FileName()
 	}

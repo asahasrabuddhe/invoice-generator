@@ -18,7 +18,7 @@ type Invoice struct {
 	Tax        Taxes     `json:"tax"`
 	Total      float64   `json:"-"`
 	TotalHours float64   `json:"-"`
-	Date       string    `json:"invoiceDate"`
+	Date       string    `json:"-"`
 	Start      time.Time `json:"-"`
 	End        time.Time `json:"-"`
 	Layout     string    `json:"-"`
