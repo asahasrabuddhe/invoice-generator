@@ -38,6 +38,7 @@ func Action(c *cli.Context) error {
 
 	if lines := c.StringSlice("lines"); len(lines) > 0 {
 		invoice.Layout = "monthly"
+		invoice.Mode = "hourly"
 		invoice.Lines = make([]Line, len(lines))
 
 		// regex to match the line in this format hours (in float):mmyyyy
@@ -69,6 +70,7 @@ func Action(c *cli.Context) error {
 		var timesheetFile *os.File
 
 		invoice.Layout = c.String("layout")
+		invoice.Mode = "daily"
 
 		timesheetFile, err = os.Open(c.String("timesheet-path"))
 		if err != nil {
