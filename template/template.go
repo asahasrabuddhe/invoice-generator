@@ -19,6 +19,7 @@ func Get(name string) (*template.Template, error) {
 		Funcs(template.FuncMap{
 			"formatDescription": FormatDescription,
 			"formatAmount":      FormatAmount,
+			"add":               Add,
 		}).
 		ParseFS(fs, "invoice/"+name)
 }
@@ -53,4 +54,8 @@ func FormatAmount(amount float64) string {
 		amt = " " + amt
 	}
 	return string(currency.Currency) + ` ` + amt
+}
+
+func Add(a, b float64) float64 {
+	return a + b
 }

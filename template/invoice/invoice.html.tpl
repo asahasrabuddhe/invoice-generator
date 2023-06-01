@@ -184,7 +184,7 @@
                                     Total
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount ($.Tax.Total $.Total) }}
+                                    {{ formatAmount (add $.Total ($.Tax.Total $.Total)) }}
                                 </td>
                             </tr>
                             </tfoot>

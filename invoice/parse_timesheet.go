@@ -204,7 +204,7 @@ func CreateLine(workPeriod Range, totalHours float64, in *Invoice) Line {
 		}
 
 		amount := totalHours * in.Rate
-		
+
 		return Line{
 			StartDate:   workPeriod.Start(),
 			Description: description,
