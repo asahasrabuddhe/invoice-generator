@@ -10,11 +10,12 @@ import (
 type Invoice struct {
 	Number     string    `json:"invoiceNumber"`
 	Rate       float64   `json:"rate"`
+	Currency   string    `json:"currency"`
 	From       Contact   `json:"from"`
 	To         Contact   `json:"to"`
 	Lines      []Line    `json:"-"`
 	ExtraLines []Line    `json:"extraLines"`
-	Tax        Tax       `json:"tax"`
+	Tax        []Tax     `json:"tax"`
 	Total      float64   `json:"-"`
 	TotalHours float64   `json:"-"`
 	Date       string    `json:"invoiceDate"`
@@ -28,10 +29,12 @@ func (i Invoice) FileName() string {
 }
 
 type Contact struct {
-	Email        string   `json:"email"`
-	Name         string   `json:"name"`
-	Phone        []string `json:"phone"`
-	AddressLines []string `json:"addressLines"`
+	Email         string   `json:"email"`
+	Name          string   `json:"name"`
+	Phone         []string `json:"phone"`
+	AddressLines  []string `json:"addressLines"`
+	AccountNumber string   `json:"accountNumber"`
+	GSTIN         string   `json:"gstin"`
 }
 
 type Line struct {

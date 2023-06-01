@@ -1,11 +1,16 @@
 package invoice
 
 import (
+	"errors"
 	"os"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"invoiceGenerator/pdf"
+	"invoiceGenerator/template"
 )
 
 func Action(c *cli.Context) error {
@@ -19,26 +24,76 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
+	switch invoice.Currency {
+	case "INR":
+		template.Currency = template.INR
+	default:
+		template.Currency = template.USD
+	}
+
 	err = configFile.Close()
 	if err != nil {
 		return err
 	}
 
-	invoice.Layout = c.String("layout")
+	if lines := c.StringSlice("lines"); len(lines) > 0 {
+		invoice.Layout = "monthly"
+		invoice.Lines = make([]Line, len(lines))
 
-	timesheetFile, err := os.Open(c.String("timesheet-path"))
-	if err != nil {
-		return err
+		// regex to match the line in this format hours (in float):mmyyyy
+		lineRegex := regexp.MustCompile(`^(\d*\.?\d*):(\d+)$`)
+		for i, line := range lines {
+			splitLine := lineRegex.FindStringSubmatch(line)
+
+			if len(splitLine) != 3 {
+				return errors.New("invalid line format")
+			}
+
+			var month Month
+			var hours float64
+
+			hours, err = strconv.ParseFloat(splitLine[1], 64)
+			if err != nil {
+				return err
+			}
+
+			month.t, err = time.ParseInLocation("022006", splitLine[2], time.Local)
+			if err != nil {
+				return err
+			}
+
+			invoice.Lines[i] = CreateLine(month, hours, invoice)
+			invoice.Total += invoice.Lines[i].Amount
+		}
+	} else {
+		var timesheetFile *os.File
+
+		invoice.Layout = c.String("layout")
+
+		timesheetFile, err = os.Open(c.String("timesheet-path"))
+		if err != nil {
+			return err
+		}
+
+		err = Parse(timesheetFile, invoice)
+		if err != nil {
+			return err
+		}
+
+		err = timesheetFile.Close()
+		if err != nil {
+			return err
+		}
 	}
 
-	err = Parse(timesheetFile, invoice)
-	if err != nil {
-		return err
-	}
+	lines := len(invoice.Lines)
+	for i, extraLine := range invoice.ExtraLines {
+		invoice.Lines[lines+i] = Line{
+			Description: extraLine.Description,
+			Amount:      extraLine.Amount,
+		}
 
-	err = timesheetFile.Close()
-	if err != nil {
-		return err
+		invoice.Total += extraLine.Amount
 	}
 
 	outFilePath := c.String("output-file")

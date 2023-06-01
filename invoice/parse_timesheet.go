@@ -115,15 +115,6 @@ func Parse(r io.Reader, in *Invoice) error {
 		line++
 	}
 
-	for i, extraLine := range in.ExtraLines {
-		in.Lines[line+i] = Line{
-			Description: extraLine.Description,
-			Amount:      extraLine.Amount,
-		}
-
-		in.Total += extraLine.Amount
-	}
-
 	// sort lines with respect to date
 	sort.Slice(in.Lines, func(i, j int) bool {
 		if in.Lines[i].StartDate.IsZero() {

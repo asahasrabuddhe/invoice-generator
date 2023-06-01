@@ -1,5 +1,5 @@
 .DS_Store
 *.pdf
 *.html
-config.json
+*.json
 dist/

@@ -8,6 +8,15 @@ import (
 	"strings"
 )
 
+type currency string
+
+const (
+	USD currency = "US$"
+	INR currency = "₹"
+)
+
+var Currency currency = USD
+
 //go:embed invoice
 var fs embed.FS
 
@@ -52,7 +61,7 @@ func FormatAmount(amount float64) string {
 	for i := len(amt); i < 8; i++ {
 		amt = " " + amt
 	}
-	return `US$ ` + amt
+	return string(Currency) + ` ` + amt
 }
 
 func CalculateTax(amount, rate float64) float64 {
