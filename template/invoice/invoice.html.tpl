@@ -157,7 +157,7 @@
                                     Subtotal
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount $t.Total }}
+                                    {{ formatAmount $.Total }}
                                 </td>
                             </tr>
                             {{ end }}
@@ -165,16 +165,16 @@
                                 {{ if ne $t.AccountNumber "" }}
                                 <th scope="row"
                                     class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
-                                    {{ .Tax.Type }} {{ .Tax.Rate }}% ({{ .Tax.AccountNumber }})
+                                    {{ $t.Type }} {{ $t.Rate }}% ({{ $t.AccountNumber }})
                                 </th>
                                 {{ else }}
                                 <th scope="row"
                                     class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
-                                    {{ .Tax.Type }} {{ .Tax.Rate }}%
+                                    {{ $t.Type }} {{ $t.Rate }}%
                                 </th>
                                 {{ end }}
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount (calculateTax .Total .Tax.Rate) }}
+                                    {{ formatAmount ($t.Total $.Total) }}
                                 </td>
                             </tr>
                             {{ end }}
@@ -184,8 +184,7 @@
                                     Total
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount (add .Total (calculateTax .Total .Tax.Rate))
-                                    }}
+                                    {{ formatAmount ($.Tax.Total $.Total) }}
                                 </td>
                             </tr>
                             </tfoot>

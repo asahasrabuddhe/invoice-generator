@@ -6,16 +6,9 @@ import (
 	"html/template"
 	"regexp"
 	"strings"
+
+	"invoiceGenerator/currency"
 )
-
-type currency string
-
-const (
-	USD currency = "US$"
-	INR currency = "₹"
-)
-
-var Currency currency = USD
 
 //go:embed invoice
 var fs embed.FS
@@ -26,8 +19,6 @@ func Get(name string) (*template.Template, error) {
 		Funcs(template.FuncMap{
 			"formatDescription": FormatDescription,
 			"formatAmount":      FormatAmount,
-			"calculateTax":      CalculateTax,
-			"add":               Add,
 		}).
 		ParseFS(fs, "invoice/"+name)
 }
@@ -61,13 +52,5 @@ func FormatAmount(amount float64) string {
 	for i := len(amt); i < 8; i++ {
 		amt = " " + amt
 	}
-	return string(Currency) + ` ` + amt
-}
-
-func CalculateTax(amount, rate float64) float64 {
-	return amount * rate / 100
-}
-
-func Add(a, b float64) float64 {
-	return a + b
+	return string(currency.Currency) + ` ` + amt
 }

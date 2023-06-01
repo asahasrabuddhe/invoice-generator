@@ -15,7 +15,7 @@ type Invoice struct {
 	To         Contact   `json:"to"`
 	Lines      []Line    `json:"-"`
 	ExtraLines []Line    `json:"extraLines"`
-	Tax        []Tax     `json:"tax"`
+	Tax        Taxes     `json:"tax"`
 	Total      float64   `json:"-"`
 	TotalHours float64   `json:"-"`
 	Date       string    `json:"invoiceDate"`
@@ -47,6 +47,22 @@ type Tax struct {
 	Type          string  `json:"type"`
 	AccountNumber string  `json:"accountNumber"`
 	Rate          float64 `json:"rate"`
+}
+
+func (t Tax) Total(amount float64) float64 {
+	return amount * (t.Rate / 100)
+}
+
+type Taxes []Tax
+
+func (t Taxes) Total(amount float64) float64 {
+	var total float64
+
+	for _, tax := range t {
+		total += tax.Total(amount)
+	}
+
+	return total
 }
 
 func NewInvoice(r io.Reader) (*Invoice, error) {

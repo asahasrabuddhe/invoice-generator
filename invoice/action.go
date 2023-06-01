@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"invoiceGenerator/currency"
 	"invoiceGenerator/pdf"
-	"invoiceGenerator/template"
 )
 
 func Action(c *cli.Context) error {
@@ -26,9 +26,9 @@ func Action(c *cli.Context) error {
 
 	switch invoice.Currency {
 	case "INR":
-		template.Currency = template.INR
+		currency.Currency = currency.INR
 	default:
-		template.Currency = template.USD
+		currency.Currency = currency.USD
 	}
 
 	err = configFile.Close()
