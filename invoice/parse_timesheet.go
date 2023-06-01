@@ -193,12 +193,12 @@ func CreateLine(workPeriod Range, totalHours float64, in *Invoice) Line {
 		var description string
 		if !workPeriod.Start().Equal(workPeriod.End()) {
 			description = fmt.Sprintf(
-				"%.2f hours of work done in between %s and %s\n@ %s %.2f per day",
+				"%.2f hours of work done in between %s and %s\n@ %s %.2f per hour",
 				totalHours, OrdinalDate(workPeriod.Start()), OrdinalDate(workPeriod.End()), currency.Currency, in.Rate,
 			)
 		} else {
 			description = fmt.Sprintf(
-				"%.2f hours of work done in on %s\n@ %s %.2f per day",
+				"%.2f hours of work done in on %s\n@ %s %.2f per hour",
 				totalHours, OrdinalDate(workPeriod.Start()), currency.Currency, in.Rate,
 			)
 		}
