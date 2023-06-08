@@ -88,13 +88,14 @@ func Action(c *cli.Context) error {
 			}
 
 			invoice.Lines[i] = CreateLine(month, hours, invoice)
+			invoice.Total += invoice.Lines[i].Amount
 		} else {
-			invoice.Lines[lines+i] = Line{
+			invoice.Lines[lines+i-1] = Line{
 				Description: extraLine.Description,
 				Amount:      extraLine.Amount,
 			}
+			invoice.Total += invoice.Lines[lines+i-1].Amount
 		}
-		invoice.Total += invoice.Lines[i].Amount
 	}
 
 	if outFilePath == "" {
