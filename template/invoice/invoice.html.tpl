@@ -142,7 +142,7 @@
                                 </td>
                                 <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
                                     <p class="text-sm text-right text-slate-700 font-bold">{{
-                                        formatAmount .Amount }}</p>
+                                        formatAmount $.Currency .Amount }}</p>
                                 </td>
                             </tr>
                             {{ end }}
@@ -157,7 +157,7 @@
                                     Subtotal
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount $.Total }}
+                                    {{ formatAmount $.Currency $.Total }}
                                 </td>
                             </tr>
                             {{ end }}
@@ -174,7 +174,7 @@
                                 </th>
                                 {{ end }}
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount ($t.Total $.Total) }}
+                                    {{ formatAmount $.Currency ($t.Total $.Total) }}
                                 </td>
                             </tr>
                             {{ end }}
@@ -184,7 +184,7 @@
                                     Total
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount (add $.Total ($.Tax.Total $.Total)) }}
+                                    {{ formatAmount $.Currency (add $.Total ($.Tax.Total $.Total)) }}
                                 </td>
                             </tr>
                             </tfoot>

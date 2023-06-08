@@ -6,8 +6,6 @@ import (
 	"html/template"
 	"regexp"
 	"strings"
-
-	"invoiceGenerator/currency"
 )
 
 //go:embed invoice
@@ -48,12 +46,12 @@ func FormatDescription(line string) template.HTML {
 	return template.HTML(`<p class="text-sm text-left font-medium text-slate-700">` + line + `</p>`)
 }
 
-func FormatAmount(amount float64) string {
+func FormatAmount(currency string, amount float64) string {
 	amt := fmt.Sprintf(`%.2f`, amount)
 	for i := len(amt); i < 8; i++ {
 		amt = " " + amt
 	}
-	return string(currency.Currency) + ` ` + amt
+	return currency + ` ` + amt
 }
 
 func Add(a, b float64) float64 {

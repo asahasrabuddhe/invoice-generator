@@ -2,7 +2,6 @@ package invoice
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -10,9 +9,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"invoiceGenerator/currency"
 	"invoiceGenerator/pdf"
 )
+
+// regex to match the line in this format hours (in float):mmyyyy
+var lineRegex = regexp.MustCompile(`^(\d*\.?\d*):(\d+)$`)
 
 func Action(c *cli.Context) error {
 	configFile, err := os.Open(c.String("config-file"))
@@ -25,11 +26,16 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	switch invoice.Currency {
-	case "INR":
-		currency.Currency = currency.INR
-	default:
-		currency.Currency = currency.USD
+	if invoice.Currency == "" {
+		invoice.Currency = "US$"
+	}
+
+	if invoice.Mode == "" {
+		invoice.Mode = "daily"
+	}
+
+	if invoice.Layout == "" {
+		invoice.Layout = "monthly"
 	}
 
 	err = configFile.Close()
@@ -39,16 +45,31 @@ func Action(c *cli.Context) error {
 
 	outFilePath := c.String("output-file")
 
-	if lines := c.StringSlice("lines"); len(lines) > 0 {
-		invoice.Layout = "monthly"
-		invoice.Mode = "hourly"
-		invoice.Lines = make([]Line, len(lines))
+	var timesheetFile *os.File
 
-		// regex to match the line in this format hours (in float):mmyyyy
-		lineRegex := regexp.MustCompile(`^(\d*\.?\d*):(\d+)$`)
-		for i, line := range lines {
-			splitLine := lineRegex.FindStringSubmatch(line)
+	timesheetFile, err = os.Open(c.String("timesheet-path"))
+	if err == nil {
+		err = Parse(timesheetFile, invoice)
+		if err != nil {
+			return err
+		}
 
+		err = timesheetFile.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	if err != nil && len(invoice.ExtraLines) == 0 {
+		return err
+	}
+
+	lines := len(invoice.Lines)
+	if lines == 0 {
+		invoice.Lines = make([]Line, len(invoice.ExtraLines))
+	}
+	for i, extraLine := range invoice.ExtraLines {
+		if splitLine := lineRegex.FindStringSubmatch(extraLine.Description); len(splitLine) > 0 {
 			if len(splitLine) != 3 {
 				return errors.New("invalid line format")
 			}
@@ -67,40 +88,13 @@ func Action(c *cli.Context) error {
 			}
 
 			invoice.Lines[i] = CreateLine(month, hours, invoice)
-			invoice.Total += invoice.Lines[i].Amount
+		} else {
+			invoice.Lines[lines+i] = Line{
+				Description: extraLine.Description,
+				Amount:      extraLine.Amount,
+			}
 		}
-
-		outFilePath = fmt.Sprintf("invoice-pere-0%s.pdf", invoice.Number)
-	} else {
-		var timesheetFile *os.File
-
-		invoice.Layout = c.String("layout")
-		invoice.Mode = "daily"
-
-		timesheetFile, err = os.Open(c.String("timesheet-path"))
-		if err != nil {
-			return err
-		}
-
-		err = Parse(timesheetFile, invoice)
-		if err != nil {
-			return err
-		}
-
-		err = timesheetFile.Close()
-		if err != nil {
-			return err
-		}
-	}
-
-	lines := len(invoice.Lines)
-	for i, extraLine := range invoice.ExtraLines {
-		invoice.Lines[lines+i] = Line{
-			Description: extraLine.Description,
-			Amount:      extraLine.Amount,
-		}
-
-		invoice.Total += extraLine.Amount
+		invoice.Total += invoice.Lines[i].Amount
 	}
 
 	if outFilePath == "" {

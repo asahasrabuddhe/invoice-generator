@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/xuri/excelize/v2"
-
-	"invoiceGenerator/currency"
 )
 
 func Parse(r io.Reader, in *Invoice) error {
@@ -194,12 +192,12 @@ func CreateLine(workPeriod Range, totalHours float64, in *Invoice) Line {
 		if !workPeriod.Start().Equal(workPeriod.End()) {
 			description = fmt.Sprintf(
 				"%.2f hours of work done in between %s and %s\n@ %s %.2f per hour",
-				totalHours, OrdinalDate(workPeriod.Start()), OrdinalDate(workPeriod.End()), currency.Currency, in.Rate,
+				totalHours, OrdinalDate(workPeriod.Start()), OrdinalDate(workPeriod.End()), in.Currency, in.Rate,
 			)
 		} else {
 			description = fmt.Sprintf(
 				"%.2f hours of work done in on %s\n@ %s %.2f per hour",
-				totalHours, OrdinalDate(workPeriod.Start()), currency.Currency, in.Rate,
+				totalHours, OrdinalDate(workPeriod.Start()), in.Currency, in.Rate,
 			)
 		}
 

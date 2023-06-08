@@ -57,18 +57,6 @@ func main() {
 			Aliases: []string{"t"},
 			Usage:   "path to the timesheet file",
 		},
-		&cli.StringSliceFlag{
-			Name:    "lines",
-			Aliases: []string{"ln"},
-			Usage:   "manual lines to add to invoice",
-			Hidden:  true,
-		},
-		&cli.StringFlag{
-			Name:    "layout",
-			Aliases: []string{"l"},
-			Usage:   "configures the layout of the generated invoice. possible values: [weekly, monthly]",
-			Value:   "monthly",
-		},
 		&cli.StringFlag{
 			Name:    "output-file",
 			Aliases: []string{"o"},
