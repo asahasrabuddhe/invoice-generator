@@ -51,7 +51,7 @@ func Action(c *cli.Context) error {
 
 	sheet.Total = math.Round(sheet.Total*100) / 100
 
-	outFileName := "summary_sheet_" + strings.ReplaceAll(strings.ToLower(sheet.Month), " ", "_") + ".pdf"
+	outFileName := "summary_statement_" + strings.ReplaceAll(strings.ToLower(sheet.Month), " ", "_") + ".pdf"
 
-	return pdf.Generate(c.Context, "summary-sheet.html.tpl", outFileName, sheet)
+	return pdf.Generate(c.Context, "summary-statement.html.tpl", outFileName, sheet)
 }
