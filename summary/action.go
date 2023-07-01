@@ -38,13 +38,6 @@ func Action(c *cli.Context) error {
 		}
 	}
 
-	// include bank fees
-	sheet.Lines = append(sheet.Lines, Line{
-		Resource:      "Bank fees",
-		InvoiceNumber: "",
-		Amount:        15.0,
-	})
-
 	for _, line := range sheet.Lines {
 		sheet.Total += line.Amount
 	}
