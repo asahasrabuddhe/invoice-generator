@@ -45,7 +45,7 @@ func Generate(ctx context.Context, templateName, outFileName string, templateDat
 	}
 
 	args := []string{
-		"--headless", "--disable-gpu", "--no-pdf-header-footer", "--print-to-pdf=" + outFileName, outFileName + ".html",
+		"--headless", "--disable-gpu", "--no-pdf-header-footer", "--print-to-pdf=" + filepath.Join(wd, outFileName), filepath.Join(wd, outFileName+".html"),
 	}
 	err = exec.CommandContext(ctx, path, args...).Run()
 	if err != nil {
