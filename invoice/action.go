@@ -64,10 +64,18 @@ func Action(c *cli.Context) error {
 		return err
 	}
 
-	lines := len(invoice.Lines)
+	lines, offset := len(invoice.Lines), 0
 	if lines == 0 {
 		invoice.Lines = make([]Line, len(invoice.ExtraLines))
 	}
+
+	for i := range invoice.Lines {
+		if invoice.Lines[i].StartDate.IsZero() {
+			offset = i
+			break
+		}
+	}
+
 	for i, extraLine := range invoice.ExtraLines {
 		if splitLine := lineRegex.FindStringSubmatch(extraLine.Description); len(splitLine) > 0 {
 			if len(splitLine) != 3 {
@@ -87,14 +95,14 @@ func Action(c *cli.Context) error {
 				return err
 			}
 
-			invoice.Lines[i] = CreateLine(month, hours, invoice)
-			invoice.Total += invoice.Lines[i].Amount
+			invoice.Lines[i+offset] = CreateLine(month, hours, invoice)
+			invoice.Total += invoice.Lines[i+offset].Amount
 		} else {
-			invoice.Lines[lines+i-1] = Line{
+			invoice.Lines[i+offset] = Line{
 				Description: extraLine.Description,
 				Amount:      extraLine.Amount,
 			}
-			invoice.Total += invoice.Lines[lines+i-1].Amount
+			invoice.Total += invoice.Lines[i+offset].Amount
 		}
 	}
 

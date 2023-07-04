@@ -22,7 +22,7 @@ type Invoice struct {
 	Start      time.Time `json:"-"`
 	End        time.Time `json:"-"`
 	Layout     string    `json:"layout"`
-	Mode       string    `json:"hourly"`
+	Mode       string    `json:"mode"`
 }
 
 func (i Invoice) FileName() string {
