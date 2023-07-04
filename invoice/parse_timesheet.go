@@ -115,15 +115,6 @@ func Parse(r io.Reader, in *Invoice) error {
 		line++
 	}
 
-	for i, extraLine := range in.ExtraLines {
-		in.Lines[line+i] = Line{
-			Description: extraLine.Description,
-			Amount:      extraLine.Amount,
-		}
-
-		in.Total += extraLine.Amount
-	}
-
 	// sort lines with respect to date
 	sort.Slice(in.Lines, func(i, j int) bool {
 		if in.Lines[i].StartDate.IsZero() {
@@ -171,29 +162,52 @@ func OrdinalDate(date time.Time) string {
 	return fmt.Sprintf("%s %s %d", day, month, year)
 }
 
-func CreateLine(week Range, totalHours float64, in *Invoice) Line {
-	daysWorked := totalHours / 8
-	daysWorked = math.Round(daysWorked*100) / 100
+func CreateLine(workPeriod Range, totalHours float64, in *Invoice) Line {
+	if in.Mode == "daily" {
+		daysWorked := totalHours / 8
+		daysWorked = math.Round(daysWorked*100) / 100
 
-	var description string
-	if !week.Start().Equal(week.End()) {
-		description = fmt.Sprintf(
-			"%.2f days of work done in between %s and %s\n@ US$ %.2f per day",
-			daysWorked, OrdinalDate(week.Start()), OrdinalDate(week.End()), in.Rate,
-		)
+		var description string
+		if !workPeriod.Start().Equal(workPeriod.End()) {
+			description = fmt.Sprintf(
+				"%.2f days of work done in between %s and %s\n@ %s %.2f per day",
+				daysWorked, OrdinalDate(workPeriod.Start()), OrdinalDate(workPeriod.End()), in.Currency, in.Rate,
+			)
+		} else {
+			description = fmt.Sprintf(
+				"%.2f day of work done in on %s\n@ %s %.2f per day",
+				daysWorked, OrdinalDate(workPeriod.Start()), in.Currency, in.Rate,
+			)
+		}
+
+		amount := daysWorked * in.Rate
+
+		return Line{
+			StartDate:   workPeriod.Start(),
+			Description: description,
+			Amount:      amount,
+		}
 	} else {
-		description = fmt.Sprintf(
-			"%.2f day of work done in on %s\n@ US$ %.2f per day",
-			daysWorked, OrdinalDate(week.Start()), in.Rate,
-		)
-	}
+		var description string
+		if !workPeriod.Start().Equal(workPeriod.End()) {
+			description = fmt.Sprintf(
+				"%.2f hours of work done in between %s and %s\n@ %s %.2f per hour",
+				totalHours, OrdinalDate(workPeriod.Start()), OrdinalDate(workPeriod.End()), in.Currency, in.Rate,
+			)
+		} else {
+			description = fmt.Sprintf(
+				"%.2f hours of work done in on %s\n@ %s %.2f per hour",
+				totalHours, OrdinalDate(workPeriod.Start()), in.Currency, in.Rate,
+			)
+		}
 
-	amount := daysWorked * in.Rate
+		amount := totalHours * in.Rate
 
-	return Line{
-		StartDate:   week.Start(),
-		Description: description,
-		Amount:      amount,
+		return Line{
+			StartDate:   workPeriod.Start(),
+			Description: description,
+			Amount:      amount,
+		}
 	}
 }
 

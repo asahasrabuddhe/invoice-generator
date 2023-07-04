@@ -53,6 +53,16 @@
                             <p class="text-xl font-extrabold tracking-tight uppercase font-body">
                                 {{ .From.Name }}
                             </p>
+                            {{ if ne .From.AccountNumber "" }}
+                            <p class="text-xl font-extrabold tracking-tight uppercase font-body">
+                                Account Number - {{ .From.AccountNumber }}
+                            </p>
+                            {{ end }}
+                            {{ if ne .From.GSTIN "" }}
+                            <p class="text-xl font-extrabold tracking-tight uppercase font-body">
+                                GSTIN - {{ .From.GSTIN }}
+                            </p>
+                            {{ end }}
                         </div>
                         <!-- invoice -->
                         <div class="space-y-2 text-slate-900">
@@ -95,6 +105,11 @@
                     <!-- contact info: phone and email -->
                     <div class="text-slate-700 font-light">
                         <p class="font-body py-2">{{ .To.Name }}</p>
+                        {{ if ne .To.GSTIN "" }}
+                        <p class="font-body py-2">
+                            GSTIN - {{ .To.GSTIN }}
+                        </p>
+                        {{ end }}
                         {{ range .To.AddressLines }}
                         <p class="font-body">{{ . }}</p>
                         {{ end }}
@@ -118,39 +133,48 @@
                             </thead>
                             <tbody>
                             {{ range .Lines }}
-                                {{ if ne .Amount 0.0 }}
-                                <tr class="border-b border-slate-200">
-                                    <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
-                                        <p class="text-sm text-left font-medium text-slate-700">{{
-                                            formatDescription
-                                            .Description}}</p>
-                                    </td>
-                                    <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
-                                        <p class="text-sm text-right text-slate-700 font-bold">{{
-                                            formatAmount .Amount }}</p>
-                                    </td>
-                                </tr>
-                                {{ end }}
+                            {{ if ne .Amount 0.0 }}
+                            <tr class="border-b border-slate-200">
+                                <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
+                                    <p class="text-sm text-left font-medium text-slate-700">{{
+                                        formatDescription
+                                        .Description}}</p>
+                                </td>
+                                <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
+                                    <p class="text-sm text-right text-slate-700 font-bold">{{
+                                        formatAmount $.Currency .Amount }}</p>
+                                </td>
+                            </tr>
+                            {{ end }}
                             {{ end }}
                             </tbody>
                             <tfoot>
-                            {{ if gt .Tax.Rate 0.0 }}
+                            {{ range $i, $t := .Tax }}
+                            {{ if eq $i 0 }}
                             <tr>
                                 <th scope="row"
                                     class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
                                     Subtotal
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount .Total }}
+                                    {{ formatAmount $.Currency $.Total }}
                                 </td>
                             </tr>
+                            {{ end }}
                             <tr>
+                                {{ if ne $t.AccountNumber "" }}
                                 <th scope="row"
                                     class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
-                                    {{ .Tax.Type }} {{ .Tax.Rate }}% ({{ .Tax.AccountNumber }})
+                                    {{ $t.Type }} {{ $t.Rate }}% ({{ $t.AccountNumber }})
                                 </th>
+                                {{ else }}
+                                <th scope="row"
+                                    class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
+                                    {{ $t.Type }} {{ $t.Rate }}%
+                                </th>
+                                {{ end }}
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount (calculateTax .Total .Tax.Rate) }}
+                                    {{ formatAmount $.Currency ($t.Total $.Total) }}
                                 </td>
                             </tr>
                             {{ end }}
@@ -160,8 +184,7 @@
                                     Total
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount (add .Total (calculateTax .Total .Tax.Rate))
-                                    }}
+                                    {{ formatAmount $.Currency (add $.Total ($.Tax.Total $.Total)) }}
                                 </td>
                             </tr>
                             </tfoot>

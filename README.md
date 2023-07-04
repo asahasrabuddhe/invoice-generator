@@ -29,6 +29,7 @@ Check for the latest version on the [releases page](https://github.com/asahasrab
 {
   "invoiceNumber": "12345",
   "rate": 50,
+  "currency": "US$",
   "from": {
     "email": "john@work.com",
     "name": "John Wick",

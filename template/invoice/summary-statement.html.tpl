@@ -85,7 +85,7 @@
                                     <p class="text-sm text-left text-slate-700 font-bold">{{ .InvoiceNumber }}</p>
                                 </td>
                                 <td class="py-4 pl-6 pr-4 pr-6 w-1/3">
-                                    <p class="text-sm text-left text-slate-700 font-bold">{{ formatAmount .Amount }}</p>
+                                    <p class="text-sm text-left text-slate-700 font-bold">{{ formatAmount "USD" .Amount }}</p>
                                 </td>
                             </tr>
                             {{ end }}
@@ -98,7 +98,7 @@
                                     Total
                                 </th>
                                 <td class="pt-4 pl-6 pr-4 text-sm font-bold text-left text-slate-700 pr-6">
-                                    {{ formatAmount .Total }}
+                                    {{ formatAmount "USD" .Total }}
                                 </td>
                             </tr>
                             </tfoot>
