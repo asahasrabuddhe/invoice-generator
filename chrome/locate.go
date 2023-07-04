@@ -3,6 +3,7 @@ package chrome
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -28,14 +29,14 @@ func Locate() string {
 		}
 	case "windows":
 		paths = []string{
-			os.Getenv("LocalAppData") + "/Google/Chrome/Application/chrome.exe",
-			os.Getenv("ProgramFiles") + "/Google/Chrome/Application/chrome.exe",
-			os.Getenv("ProgramFiles(x86)") + "/Google/Chrome/Application/chrome.exe",
-			os.Getenv("LocalAppData") + "/Chromium/Application/chrome.exe",
-			os.Getenv("ProgramFiles") + "/Chromium/Application/chrome.exe",
-			os.Getenv("ProgramFiles(x86)") + "/Chromium/Application/chrome.exe",
-			os.Getenv("ProgramFiles(x86)") + "/Microsoft/Edge/Application/msedge.exe",
-			os.Getenv("ProgramFiles") + "/Microsoft/Edge/Application/msedge.exe",
+			filepath.Join(os.Getenv("ProgramFiles") + "/Google/Chrome/Application/chrome.exe"),
+			filepath.Join(os.Getenv("LocalAppData") + "/Google/Chrome/Application/chrome.exe"),
+			filepath.Join(os.Getenv("ProgramFiles(x86)") + "/Google/Chrome/Application/chrome.exe"),
+			filepath.Join(os.Getenv("LocalAppData") + "/Chromium/Application/chrome.exe"),
+			filepath.Join(os.Getenv("ProgramFiles") + "/Chromium/Application/chrome.exe"),
+			filepath.Join(os.Getenv("ProgramFiles(x86)") + "/Chromium/Application/chrome.exe"),
+			filepath.Join(os.Getenv("ProgramFiles(x86)") + "/Microsoft/Edge/Application/msedge.exe"),
+			filepath.Join(os.Getenv("ProgramFiles") + "/Microsoft/Edge/Application/msedge.exe"),
 		}
 	default:
 		paths = []string{
