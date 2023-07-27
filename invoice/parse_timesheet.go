@@ -39,7 +39,7 @@ func Parse(r io.Reader, in *Invoice) error {
 		// the first row is the month. we will use this row to set things up
 		if i == 0 {
 			// the month of the in
-			month, err = NewInvoiceMonth(strings.Split(row[0], " :")[0])
+			month, err = NewInvoiceMonth(strings.TrimSpace(strings.Split(row[0], ":")[0]))
 			if err != nil {
 				return err
 			}
