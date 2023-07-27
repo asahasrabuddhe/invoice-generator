@@ -63,6 +63,7 @@ func Parse(r io.Reader, in *Invoice) error {
 
 		// in the exported sheet, if the row has three columns, it is the total hours logged for that day
 		case 3, 4:
+			// the hours are calculated using the SUM formula. we need to get the value of the cell
 			var val string
 			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("%c%d", len(row)+64, i+1))
 			if err != nil {
