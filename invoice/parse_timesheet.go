@@ -62,10 +62,9 @@ func Parse(r io.Reader, in *Invoice) error {
 			day = day.AddDate(month.Year(), 0, 0)
 
 		// in the exported sheet, if the row has three columns, it is the total hours logged for that day
-		case 3:
-			// the hours are calculated using the SUM forumla. we need to get the value of the cell
+		case 3, 4:
 			var val string
-			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("C%d", i+1))
+			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("%c%d", len(row)+64, i+1))
 			if err != nil {
 				return err
 			}
