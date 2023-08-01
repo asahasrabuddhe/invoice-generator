@@ -133,50 +133,50 @@
                             </thead>
                             <tbody>
                             {{ range .Lines }}
-                            {{ if ne .Amount 0.0 }}
-                            <tr class="border-b border-slate-200">
-                                <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
-                                    <p class="text-sm text-left font-medium text-slate-700">{{
-                                        formatDescription
-                                        .Description}}</p>
-                                </td>
-                                <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
-                                    <p class="text-sm text-right text-slate-700 font-bold">{{
-                                        formatAmount $.Currency .Amount }}</p>
-                                </td>
-                            </tr>
-                            {{ end }}
+                                {{ if ne .Amount 0.0 }}
+                                <tr class="border-b border-slate-200">
+                                    <td class="py-4 pl-4 pr-3 pl-6 w-3/4">
+                                        <p class="text-sm text-left font-medium text-slate-700">{{
+                                            formatDescription
+                                            .Description}}</p>
+                                    </td>
+                                    <td class="py-4 pl-3 pr-4 pr-6 w-1/4">
+                                        <p class="text-sm text-right text-slate-700 font-bold">{{
+                                            formatAmountCa $.Currency .Amount }}</p>
+                                    </td>
+                                </tr>
+                                {{ end }}
                             {{ end }}
                             </tbody>
                             <tfoot>
                             {{ range $i, $t := .Tax }}
-                            {{ if eq $i 0 }}
-                            <tr>
-                                <th scope="row"
-                                    class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
-                                    Subtotal
-                                </th>
-                                <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount $.Currency $.Total }}
-                                </td>
-                            </tr>
-                            {{ end }}
-                            <tr>
-                                {{ if ne $t.AccountNumber "" }}
-                                <th scope="row"
-                                    class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
-                                    {{ $t.Type }} {{ $t.Rate }}% ({{ $t.AccountNumber }})
-                                </th>
-                                {{ else }}
-                                <th scope="row"
-                                    class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
-                                    {{ $t.Type }} {{ $t.Rate }}%
-                                </th>
+                                {{ if eq $i 0 }}
+                                <tr>
+                                    <th scope="row"
+                                        class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
+                                        Subtotal
+                                    </th>
+                                    <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
+                                        {{ formatAmountCa $.Currency $.Total }}
+                                    </td>
+                                </tr>
                                 {{ end }}
-                                <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount $.Currency ($t.Total $.Total) }}
-                                </td>
-                            </tr>
+                                <tr>
+                                    {{ if ne $t.AccountNumber "" }}
+                                    <th scope="row"
+                                        class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
+                                        {{ $t.Type }} {{ $t.Rate }}% ({{ $t.AccountNumber }})
+                                    </th>
+                                    {{ else }}
+                                    <th scope="row"
+                                        class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
+                                        {{ $t.Type }} {{ $t.Rate }}%
+                                    </th>
+                                    {{ end }}
+                                    <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
+                                        {{ formatAmountCa $.Currency ($t.Total $.Total) }}
+                                    </td>
+                                </tr>
                             {{ end }}
                             <tr>
                                 <th scope="row"
@@ -184,9 +184,20 @@
                                     Total
                                 </th>
                                 <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
-                                    {{ formatAmount $.Currency (add $.Total ($.Tax.Total $.Total)) }}
+                                    {{ formatAmountCa $.Currency (add $.Total ($.Tax.Total $.Total)) }}
                                 </td>
                             </tr>
+                            {{ if ne .CurrencyRate 0.0 }}
+                            <tr>
+                                <th scope="row"
+                                    class="pt-4 pl-6 pr-3 text-sm font-bold text-right text-slate-700 table-cell">
+                                    1 {{ .Currency }} = {{ .CurrencyRate }} INR
+                                </th>
+                                <td class="pt-4 pl-3 pr-4 text-sm font-bold text-right text-slate-700 pr-6">
+                                    {{ formatAmountInd .Currency (mul (add .Total (.Tax.Total .Total)) .CurrencyRate) }}
+                                </td>
+                            </tr>
+                            {{ end }}
                             </tfoot>
                         </table>
                     </div>
