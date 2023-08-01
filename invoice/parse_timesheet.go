@@ -39,7 +39,7 @@ func Parse(r io.Reader, in *Invoice) error {
 		// the first row is the month. we will use this row to set things up
 		if i == 0 {
 			// the month of the in
-			month, err = NewInvoiceMonth(strings.Split(row[0], " :")[0])
+			month, err = NewInvoiceMonth(strings.TrimSpace(strings.Split(row[0], ":")[0]))
 			if err != nil {
 				return err
 			}
@@ -62,10 +62,10 @@ func Parse(r io.Reader, in *Invoice) error {
 			day = day.AddDate(month.Year(), 0, 0)
 
 		// in the exported sheet, if the row has three columns, it is the total hours logged for that day
-		case 3:
-			// the hours are calculated using the SUM forumla. we need to get the value of the cell
+		case 3, 4:
+			// the hours are calculated using the SUM formula. we need to get the value of the cell
 			var val string
-			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("C%d", i+1))
+			val, err = file.CalcCellValue(activeSheetName, fmt.Sprintf("%c%d", len(row)+64, i+1))
 			if err != nil {
 				return err
 			}
