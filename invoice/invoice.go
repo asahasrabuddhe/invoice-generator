@@ -8,21 +8,22 @@ import (
 )
 
 type Invoice struct {
-	Number     string    `json:"invoiceNumber"`
-	Rate       float64   `json:"rate"`
-	Currency   string    `json:"currency"`
-	From       Contact   `json:"from"`
-	To         Contact   `json:"to"`
-	Lines      []Line    `json:"-"`
-	ExtraLines []Line    `json:"extraLines"`
-	Tax        Taxes     `json:"tax"`
-	Total      float64   `json:"-"`
-	TotalHours float64   `json:"-"`
-	Date       string    `json:"-"`
-	Start      time.Time `json:"-"`
-	End        time.Time `json:"-"`
-	Layout     string    `json:"layout"`
-	Mode       string    `json:"mode"`
+	Number       string    `json:"invoiceNumber"`
+	Rate         float64   `json:"rate"`
+	Currency     string    `json:"currency"`
+	CurrencyRate float64   `json:"-"`
+	From         Contact   `json:"from"`
+	To           Contact   `json:"to"`
+	Lines        []Line    `json:"-"`
+	ExtraLines   []Line    `json:"extraLines"`
+	Tax          Taxes     `json:"tax"`
+	Total        float64   `json:"-"`
+	TotalHours   float64   `json:"-"`
+	Date         string    `json:"-"`
+	Start        time.Time `json:"-"`
+	End          time.Time `json:"-"`
+	Layout       string    `json:"layout"`
+	Mode         string    `json:"mode"`
 }
 
 func (i Invoice) FileName() string {

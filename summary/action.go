@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"invoiceGenerator/invoice"
 	"invoiceGenerator/pdf"
 )
 
@@ -20,21 +21,21 @@ func Action(c *cli.Context) error {
 
 	sheet.Lines = make([]Line, len(invoices))
 
-	for i, invoice := range invoices {
-		f, err := os.Open(invoice)
+	for i, inv := range invoices {
+		f, err := os.Open(inv)
 		if err != nil {
 			return err
 		}
 
-		inv, err := pdf.Read(f)
+		in, err := pdf.Read(f)
 		if err != nil {
 			return err
 		}
 
 		sheet.Lines[i] = Line{
-			Resource:      inv.Resource(),
-			InvoiceNumber: inv.Number(),
-			Amount:        inv.Amount(),
+			Resource:      in.Resource(),
+			InvoiceNumber: in.Number(),
+			Amount:        in.Amount(),
 		}
 	}
 
@@ -46,5 +47,52 @@ func Action(c *cli.Context) error {
 
 	outFileName := "summary_statement_" + strings.ReplaceAll(strings.ToLower(sheet.Month), " ", "_") + ".pdf"
 
-	return pdf.Generate(c.Context, "summary-statement.html.tpl", outFileName, sheet)
+	err := pdf.Generate(c.Context, "summary-statement.html.tpl", outFileName, sheet)
+	if err != nil {
+		return err
+	}
+
+	// generate invoice inr
+	configFile, err := os.Open(c.String("config-file"))
+	if err != nil {
+		return err
+	}
+
+	invoiceInr, err := invoice.NewInvoice(configFile)
+	if err != nil {
+		return err
+	}
+
+	if invoiceInr.Currency == "" {
+		invoiceInr.Currency = "US$"
+	}
+
+	if invoiceInr.Mode == "" {
+		invoiceInr.Mode = "daily"
+	}
+
+	if invoiceInr.Layout == "" {
+		invoiceInr.Layout = "monthly"
+	}
+
+	invoiceInr.Start = time.Now().In(time.Local).AddDate(0, -1, 0)
+
+	err = configFile.Close()
+	if err != nil {
+		return err
+	}
+
+	invoiceInr.Lines = []invoice.Line{
+		{
+			Description: "Summary Statement for " + sheet.Month,
+			Amount:      sheet.Total,
+		},
+	}
+
+	invoiceInr.CurrencyRate = 82.5
+	invoiceInr.Total = sheet.Total
+
+	outFilePath := "invoice-inr" + strings.ReplaceAll(strings.ToLower(sheet.Month), " ", "_") + ".pdf"
+
+	return pdf.Generate(c.Context, "invoice.html.tpl", outFilePath, invoiceInr)
 }
