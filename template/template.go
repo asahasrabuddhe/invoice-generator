@@ -6,6 +6,9 @@ import (
 	"html/template"
 	"regexp"
 	"strings"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 //go:embed invoice
@@ -16,7 +19,8 @@ func Get(name string) (*template.Template, error) {
 		New(name).
 		Funcs(template.FuncMap{
 			"formatDescription": FormatDescription,
-			"formatAmount":      FormatAmount,
+			"formatAmountInd":   FormatAmount(language.Hindi),
+			"formatAmountCa":    FormatAmount(language.English),
 			"add":               Add,
 			"mul":               Multiply,
 		}).
@@ -47,12 +51,15 @@ func FormatDescription(line string) template.HTML {
 	return template.HTML(`<p class="text-sm text-left font-medium text-slate-700">` + line + `</p>`)
 }
 
-func FormatAmount(currency string, amount float64) string {
-	amt := fmt.Sprintf(`%.2f`, amount)
-	for i := len(amt); i < 8; i++ {
-		amt = " " + amt
+func FormatAmount(tag language.Tag) func(currency string, amount float64) string {
+	printer := message.NewPrinter(tag)
+	return func(currency string, amount float64) string {
+		amt := printer.Sprintf(`%.2f`, amount)
+		for i := len(amt); i < 8; i++ {
+			amt = " " + amt
+		}
+		return currency + ` ` + amt
 	}
-	return currency + ` ` + amt
 }
 
 func Add(a, b float64) float64 {
