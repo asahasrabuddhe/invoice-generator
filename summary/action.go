@@ -92,7 +92,7 @@ func Action(c *cli.Context) error {
 	invoiceInr.CurrencyRate = 82.5
 	invoiceInr.Total = sheet.Total
 
-	outFilePath := "invoice-inr" + strings.ReplaceAll(strings.ToLower(sheet.Month), " ", "_") + ".pdf"
+	outFilePath := invoiceInr.Number + " - " + sheet.Month + " - INR.pdf"
 
 	return pdf.Generate(c.Context, "invoice.html.tpl", outFilePath, invoiceInr)
 }
