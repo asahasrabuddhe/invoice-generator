@@ -42,6 +42,11 @@ func main() {
 					Aliases: []string{"i"},
 					Usage:   "path to the invoice file",
 				},
+				&cli.Float64Flag{
+					Name:    "rate",
+					Aliases: []string{"r"},
+					Usage:   "currency exchange rate",
+				},
 			},
 		},
 	}

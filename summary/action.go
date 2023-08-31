@@ -89,7 +89,7 @@ func Action(c *cli.Context) error {
 		},
 	}
 
-	invoiceInr.CurrencyRate = 82.5
+	invoiceInr.CurrencyRate = c.Float64("rate")
 	invoiceInr.Total = sheet.Total
 
 	outFilePath := invoiceInr.Number + " - " + sheet.Month + " - INR.pdf"

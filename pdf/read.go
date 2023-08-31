@@ -53,8 +53,11 @@ func (i Invoice) Number() string {
 }
 
 func (i Invoice) Amount() float64 {
-	amountStr := strings.Split(i.splitText[len(i.splitText)-1], " ")
-	amount, _ := strconv.ParseFloat(amountStr[len(amountStr)-1], 64)
+	splitAmt := strings.Split(i.splitText[len(i.splitText)-1], " ")
+	amountStr := splitAmt[len(splitAmt)-1]
+	// normalize
+	amountStr = strings.ReplaceAll(amountStr, ",", "")
+	amount, _ := strconv.ParseFloat(amountStr, 64)
 	return amount
 }
 
